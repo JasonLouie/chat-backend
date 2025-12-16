@@ -1,4 +1,4 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn,  } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User.js";
 import { UserStatus } from "../enums.js";
 
@@ -14,5 +14,6 @@ export class Profile {
     status!: UserStatus;
 
     @OneToOne(() => User, (user) => user.profile)
+    @JoinColumn()
     user!: User;
 }

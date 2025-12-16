@@ -1,5 +1,7 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Profile } from "./Profile.js";
+import { ChatMember } from "./ChatMember.js";
+import { Message } from "./Message.js";
 
 @Entity({ name: "users" })
 export class User {
@@ -12,7 +14,7 @@ export class User {
     @Column({ unique: true, length: 255 })
     email!: string;
 
-    @Column({ select: false, length: 255 })
+    @Column({ select: false })
     password_hash!: string;
 
     @CreateDateColumn()
@@ -22,6 +24,11 @@ export class User {
         cascade: true,
         eager: true
     })
-    @JoinColumn()
     profile!: Profile;
+
+    @OneToMany(() => ChatMember, (chatMember) => chatMember.user)
+    chatMembers!: ChatMember[];
+
+    @OneToMany(() => Message, (message) => message.sender)
+    messages!: Message[];
 }
