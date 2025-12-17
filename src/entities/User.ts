@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, Prim
 import { Profile } from "./Profile.js";
 import { ChatMember } from "./ChatMember.js";
 import { Message } from "./Message.js";
+import { RefreshToken } from "./RefreshToken.js";
 
 @Entity({ name: "users" })
 export class User {
@@ -11,7 +12,7 @@ export class User {
     @Column({ unique: true, length: 50 })
     username!: string;
 
-    @Column({ unique: true, length: 255 })
+    @Column({ select: false, unique: true, length: 255 })
     email!: string;
 
     @Column({ select: false })
@@ -31,4 +32,7 @@ export class User {
 
     @OneToMany(() => Message, (message) => message.sender)
     messages!: Message[];
+
+    @OneToMany(() => RefreshToken, (token) => token.user)
+    refreshTokens!: RefreshToken[];
 }

@@ -1,10 +1,10 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { User } from "./User.js";
 import { UserStatus } from "../enums.js";
 
 @Entity({ name: "profiles" })
 export class Profile {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn("uuid")
     id!: string;
 
     @Column({ length: 255, nullable: true })

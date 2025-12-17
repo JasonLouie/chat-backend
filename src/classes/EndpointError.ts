@@ -1,11 +1,12 @@
 import { Status } from "../enums.js";
+import type { ValidationErrors } from "../middleware/validators.js";
 
 export class EndpointError {
     #status;
     #message;
-    #name: string;
+    #name;
 
-    constructor(status: number, message: string, name?: string) {
+    constructor(status: number, message: string | ValidationErrors, name?: string) {
         this.#status = status;
         this.#message = status === 404 ? `${message} not found.` : status === 500 ? "Internal Server Error" : message;
         this.#name = name || Status[status] || Status[500]!;

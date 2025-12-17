@@ -1,6 +1,12 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import "dotenv/config";
+import { User } from "../entities/User.js";
+import { Profile } from "../entities/Profile.js";
+import { Message } from "../entities/Message.js";
+import { Chat } from "../entities/Chat.js";
+import { ChatMember } from "../entities/ChatMember.js";
+import { RefreshToken } from "../entities/RefreshToken.js";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -11,7 +17,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "chat_app",
     synchronize: process.env.NODE_ENV !== "production",
     logging: process.env.NODE_ENV !== "production",
-    entities: [],
+    entities: [User, Profile, Chat, ChatMember, Message, RefreshToken],
     migrations: [],
     subscribers: [],
     ssl: { rejectUnauthorized: true }

@@ -7,22 +7,37 @@ interface RegexValidator {
     message: string
 }
 
-interface FlexibleData {
-    [key: string]: any;
+interface Rules {
+    [key: string]: string | boolean | number | RegExp | RegexValidator[],
+    regexes?: RegexValidator[],
+    regex?: RegExp,
+    message?: string,
+    minLength?: number
 }
 
-interface Errors {
+interface Validations {
+    [key: string]: Rules;
+}
+
+export interface ValidationErrors {
     [key: string]: string[];
 }
 
-function validate(validations: FlexibleData, req: Request, res: Response, next: NextFunction) {
-    const validationErrors: Errors = {};
+/**
+ * 
+ * @param validations 
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
+function validate(validations: Validations, req: Request, res: Response, next: NextFunction) {
+    const validationErrors: ValidationErrors = {};
 
     for (const field in validations) {
         const fieldName = titleCase(field);
-        const rules = validations[field];
-        const value = req.body[field];
-        const errors = [];
+        const rules: Rules = validations[field]!;
+        const value: string | undefined = req.body[field];
+        const errors: string[] = [];
 
         if (rules.required && !value) {
             errors.push(`${fieldName} is required.`);
@@ -35,15 +50,39 @@ function validate(validations: FlexibleData, req: Request, res: Response, next: 
                     errors.push(r.message);
                 }
             });
-        } else if (value && rules.regex && !rules.regex.test(value)) { // Handle a singular regex test
+        } else if (value && rules.regex && rules.message && !(rules.regex.test(value))) { // Handle a singular regex test
             errors.push(rules.message);
         }
 
+        // Handle minLength tests
+        if (value && rules.minLength && value.length < rules.minLength) {
+            errors.push(`${fieldName} must be at least ${rules.minLength} characters.`);
+        }
+
+        // Handle exact value matches
+        if (value && rules.match !== undefined) {
+            // If confirmPassword is an empty string or password doesn't match confirm password
+            if (!rules.match || value !== rules.match) errors.push(`Both ${field}s must match.`);
+        }
+
+        // 
         if (errors.length > 0) {
             validationErrors[field] = errors;
         }
     }
+
+    if (Object.keys(validationErrors).length > 0) {
+        console.log("Validation Error!");
+        res.status(400).json(new EndpointError(400, validationErrors));
+    } else {
+        console.log("Validation passed!");
+        next();
+    }
 }
+
+const requiredRule = {
+    required: true
+};
 
 const usernameRules = {
     regex: /^[a-zA-Z0-9_.]+$/,
@@ -82,7 +121,13 @@ const passwordRules = {
 };
 
 // AUTH AND USER VALIDATORS
-export function validateSignUp(req: Request, res: Response, next: NextFunction) {
+/**
+ * Middleware that validates the request body when user registers
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
+export function validateRegistration(req: Request, res: Response, next: NextFunction) {
     const confirmPassword = req.body?.confirmPassword || "";
     const validations = {
         username: usernameRules,
@@ -92,15 +137,26 @@ export function validateSignUp(req: Request, res: Response, next: NextFunction) 
     validate(validations, req, res, next);
 }
 
+/**
+ * Middleware that validates the request body when user logs in
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
 export function validateLogin(req: Request, res: Response, next: NextFunction) {
     const validations = {
-        email: emailRules,
-        password: passwordRules
+        username: requiredRule,
+        password: requiredRule
     };
     validate(validations, req, res, next);
 }
 
-// Middleware for validating req body when modifying user
+/**
+ * Middleware that validates the request body when user modifies their credentials
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
 export function validateModifyUser(req: Request, res: Response, next: NextFunction) {
     const validations = {
         username: {...usernameRules, required: false}
@@ -108,20 +164,30 @@ export function validateModifyUser(req: Request, res: Response, next: NextFuncti
     validate(validations, req, res, next);
 }
 
-// Middleware for validing password before changing it
-export function validatePassword(req: Request, res: Response, next: NextFunction) {
+/**
+ * Middleware that validates the request body when user resets password
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
+export function validateResetPassword(req: Request, res: Response, next: NextFunction) {
     const validations = {
-        oldPassword: {required: true},
+        oldPassword: requiredRule,
         newPassword: passwordRules
     };
     validate(validations, req, res, next);
 }
 
-// Middleware for validating email before changing it
+/**
+ * Middleware that validates the request body (email and password) when user changes email
+ * @param req - Request
+ * @param res - Response
+ * @param next - Next
+ */
 export function validateEmail(req: Request, res: Response, next: NextFunction) {
     const validations = {
         newEmail: emailRules,
-        password: {required: true}
+        password: requiredRule
     };
     validate(validations, req, res, next);
 }

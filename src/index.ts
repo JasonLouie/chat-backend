@@ -9,6 +9,8 @@ try {
     await AppDataSource.initialize();
     console.log("✅ Data Source has been initialized!");
 
+    app.use(express.json());
+
     app.listen(port, () => {
         console.log(`🚀 Server running on port ${port}`);
     });
