@@ -6,10 +6,10 @@ import { User } from "./User.js";
 @Entity({ name: "chat_members"})
 export class ChatMember {
     @PrimaryColumn("uuid")
-    chat_id!: string;
+    chatId!: string;
 
     @PrimaryColumn("uuid")
-    user_id!: string;
+    userId!: string;
 
     // Database mapping: SQL column member_role -> role (TS)
     @Column({
@@ -21,10 +21,10 @@ export class ChatMember {
     role!: UserRole;
 
     @CreateDateColumn()
-    joined_at!: Date;
+    joinedAt!: Date;
 
-    @Column({ nullable: true })
-    last_read_at!: Date | null;
+    @Column({ type: "datetime", nullable: true })
+    lastReadAt!: Date | null;
 
     @ManyToOne(() => Chat, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })

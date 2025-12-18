@@ -8,7 +8,7 @@ export class EndpointError {
 
     constructor(status: number, message: string | ValidationErrors, name?: string) {
         this.status = status;
-        this.message = status === 500 ? "Internal Server Error" : message;
+        this.message = message;
         this.name = name || Status[status] || Status[500]!;
     }
 

@@ -9,17 +9,17 @@ export class User {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @Column({ unique: true, length: 50 })
+    @Column({ type: "varchar", length: 50, unique: true })
     username!: string;
 
-    @Column({ select: false, unique: true, length: 255 })
+    @Column({ select: false, type: "varchar", length: 255, unique: true })
     email!: string;
 
-    @Column({ select: false })
-    password_hash!: string;
+    @Column({ select: false, type: "varchar", length: 255 })
+    passwordHash!: string;
 
     @CreateDateColumn()
-    created_at!: Date;
+    createdAt!: Date;
 
     @OneToOne(() => Profile, (profile) => profile.user, {
         cascade: true,
@@ -34,5 +34,5 @@ export class User {
     messages!: Message[];
 
     @OneToMany(() => RefreshToken, (token) => token.user)
-    refreshTokens!: RefreshToken[];
+    tokens!: RefreshToken[];
 }

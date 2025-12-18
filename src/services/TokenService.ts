@@ -10,7 +10,7 @@ export interface Tokens {
 }
 
 export class TokenService {
-    private tokenRepository = AppDataSource.getRepository(RefreshToken);
+    private tokenRepo = AppDataSource.getRepository(RefreshToken);
 
     /**
      * Generates access and refresh tokens
@@ -24,12 +24,12 @@ export class TokenService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.REFRESH_TOKEN_DAYS || "7"));
         
-        const dbToken = this.tokenRepository.create({
+        const dbToken = this.tokenRepo.create({
             token: refreshToken,
-            user_id: userId,
-            expires_at: expiresAt
+            userId: userId,
+            expiresAt: expiresAt
         });
-        await this.tokenRepository.save(dbToken)
+        await this.tokenRepo.save(dbToken)
         return { accessToken, refreshToken };
     }
 
@@ -42,9 +42,9 @@ export class TokenService {
 
         let dbToken;
         try {
-            dbToken = await this.tokenRepository.findOne({
+            dbToken = await this.tokenRepo.findOne({
                 where: { token: refreshToken },
-                select: ["token", "user_id", "expires_at"]
+                select: ["token", "userId", "expiresAt"]
             });
         } catch (error) {
             throw new EndpointError(500, "Server error during token refresh.");
@@ -54,11 +54,11 @@ export class TokenService {
         if (!dbToken) throw new EndpointError(403, "Failed to generate new tokens. Invalid refresh token.");
     
         // Check if refresh token expired
-        if (dbToken.expires_at < new Date()) throw new EndpointError(403, "Failed to generate new tokens. Refresh token is expired.");
+        if (dbToken.expiresAt < new Date()) throw new EndpointError(403, "Failed to generate new tokens. Refresh token is expired.");
 
-        const user_id = dbToken.user_id;
-        const results = await Promise.all([this.generateTokens(user_id), this.tokenRepository.remove(dbToken)])
-        return results[0];
+        const userId = dbToken.userId;
+        const [tokens] = await Promise.all([this.generateTokens(userId), this.tokenRepo.remove(dbToken)]);
+        return tokens;
     }
 
     /**
@@ -70,9 +70,9 @@ export class TokenService {
 
         let dbToken;
         try {
-            dbToken = await this.tokenRepository.findOne({
+            dbToken = await this.tokenRepo.findOne({
                 where: { token: refreshToken },
-                select: ["token", "user_id", "expires_at"]
+                select: ["token", "userId", "expiresAt"]
             });
         } catch (error) {
             throw new EndpointError(500, "Server error during logout.");
@@ -81,6 +81,6 @@ export class TokenService {
         // Refresh token is already invalid, so prompt user to logout.
         if (!dbToken) return;
 
-        await this.tokenRepository.remove(dbToken);
+        await this.tokenRepo.remove(dbToken);
     }
 }

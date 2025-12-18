@@ -7,7 +7,7 @@ export class ProfileService {
     private profileRepo = AppDataSource.getRepository(Profile);
 
     /**
-     * GET /api/profile/me
+     * GET /api/profile/me or /api/profile/uuid
      */
     async getProfileWithUser(userId: string): Promise<ProfileResponse | null> {
         const profile = await this.profileRepo.findOne({
@@ -17,7 +17,7 @@ export class ProfileService {
             },
             select: {
                 id: true,
-                image_url: true,
+                imageUrl: true,
                 status: true,
                 bio: true,
                 user: {
@@ -31,13 +31,13 @@ export class ProfileService {
         return {
             id: profile.id,
             username: profile.user.username,
-            image_url: profile.image_url,
+            imageUrl: profile.imageUrl,
             status: profile.status,
             bio: profile.bio
         };
     }
 
     /**
-     * PATCH /api/profile/me - Modify image_url or bio
+     * PATCH /api/profile/me - Modify imageUrl or bio
      */
 }

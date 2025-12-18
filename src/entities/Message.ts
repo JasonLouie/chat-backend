@@ -16,10 +16,10 @@ export class Message {
     id!: string;
 
     @Column("uuid")
-    chat_id!: string;
+    chatId!: string;
 
     @Column("uuid")
-    sender_id!: string;
+    senderId!: string;
 
     @Column({ type: "enum", enum: MessageType, default: MessageType.TEXT })
     type!: MessageType;
@@ -28,13 +28,13 @@ export class Message {
     content!: string;
 
     @CreateDateColumn()
-    created_at!: Date;
+    createdAt!: Date;
 
     @ManyToOne(() => Chat, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })
     chat!: Chat;
 
     @ManyToOne(() => User, (user) => user, { onDelete: "CASCADE" })
-    @JoinColumn({ name: "user_id" })
+    @JoinColumn({ name: "sender_id" })
     sender!: User;
 }

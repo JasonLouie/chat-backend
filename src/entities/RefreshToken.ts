@@ -3,19 +3,19 @@ import { User } from "./User.js";
 
 @Entity({ name: "refresh_tokens" })
 export class RefreshToken {
-    @PrimaryColumn({ length: 255 })
+    @PrimaryColumn({ type: "varchar", length: 255 })
     token!: string;
 
     @Column("uuid")
-    user_id!: string;
+    userId!: string;
 
     @CreateDateColumn()
-    created_at!: Date;
+    createdAt!: Date;
 
-    @Column()
-    expires_at!: Date;
+    @Column({ type: "datetime" })
+    expiresAt!: Date;
 
-    @ManyToOne(() => User, (user) => user.refreshTokens, { onDelete: "CASCADE" })
+    @ManyToOne(() => User, (user) => user.tokens, { onDelete: "CASCADE" })
     @JoinColumn({ name: "user_id" })
     user!: User;
 }

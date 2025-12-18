@@ -7,13 +7,13 @@ export class Profile {
     @PrimaryColumn("uuid")
     id!: string;
 
-    @Column({ length: 255, nullable: true })
-    image_url!: string | null;
+    @Column({ type: "varchar", length: 255, nullable: true })
+    imageUrl!: string | null;
 
     @Column({ type: "enum", enum: UserStatus, default: UserStatus.OFFLINE })
     status!: UserStatus;
 
-    @Column({ length: 500, nullable: true })
+    @Column({ type: "varchar", length: 500, nullable: true })
     bio!: string | null;
 
     @OneToOne(() => User, (user) => user.profile, {

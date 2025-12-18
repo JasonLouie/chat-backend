@@ -7,6 +7,7 @@ import { Message } from "../entities/Message.js";
 import { Chat } from "../entities/Chat.js";
 import { ChatMember } from "../entities/ChatMember.js";
 import { RefreshToken } from "../entities/RefreshToken.js";
+import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
 export const AppDataSource = new DataSource({
     type: "mysql",
@@ -17,6 +18,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "chat_app",
     synchronize: process.env.NODE_ENV !== "production",
     logging: process.env.NODE_ENV !== "production",
+    namingStrategy: new SnakeNamingStrategy,
     entities: [User, Profile, Chat, ChatMember, Message, RefreshToken],
     migrations: [],
     subscribers: [],

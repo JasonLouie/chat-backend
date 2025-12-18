@@ -6,12 +6,12 @@ import bcrypt from "bcryptjs";
 import type { ValidationErrors } from "../types/validate.js";
 
 export class AuthService {
-    private userRepository = AppDataSource.getRepository(User);
+    private userRepo = AppDataSource.getRepository(User);
 
     async getUserById(userId: string, allowThrow = true) {
-        const user = await this.userRepository.findOne({
+        const user = await this.userRepo.findOne({
             where: { id: userId },
-            select: ["id", "username", "email", "password_hash"]
+            select: ["id", "username", "email", "passwordHash"]
         });
 
         // User does not exist
@@ -21,7 +21,7 @@ export class AuthService {
 
     async register(username: string, email: string, password: string): Promise<User> {
         // Find users that have the username or email
-        const existingUsers = await this.userRepository.find({
+        const existingUsers = await this.userRepo.find({
             where: [
                 { email },
                 { username }
@@ -44,30 +44,30 @@ export class AuthService {
         const salt = await bcrypt.genSalt(13);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = this.userRepository.create({
+        const newUser = this.userRepo.create({
             username,
             email,
-            password_hash: hashedPassword
+            passwordHash: hashedPassword
         });
 
         const newProfile = new Profile();
         newUser.profile = newProfile;
 
         // Save the user to db. Also saves the attached profile because of cascade: true in entities/User.ts
-        await this.userRepository.save(newUser);
+        await this.userRepo.save(newUser);
         return newUser;
     }
 
     async login(username: string, password: string): Promise<User | null> {
-        const user = await this.userRepository.findOne({
+        const user = await this.userRepo.findOne({
             where: { username },
-            select: ["id", "username", "email", "password_hash"]
+            select: ["id", "username", "email", "passwordHash"]
         });
 
         // User does not exist
         if (!user) throw new EndpointError(404, "User does not exist.");
 
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+        const isMatch = await bcrypt.compare(password, user.passwordHash);
 
         // Incorrect password
         if (!isMatch) throw new EndpointError(401, "Invalid password.");

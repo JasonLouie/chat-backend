@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { ChatMember } from "./ChatMember.js";
 import { Message } from "./Message.js";
 
@@ -7,21 +7,27 @@ export class Chat {
     @PrimaryGeneratedColumn("uuid")
     id!: string;
 
-    @Column({ default: false })
-    is_group!: boolean;
+    @Column({ type: "boolean", default: false })
+    isGroup!: boolean;
 
-    @Column({ length: 255, nullable: true })
-    image_url!: string | null;
+    @Column({ type: "varchar", length: 255, nullable: true })
+    imageUrl!: string | null;
 
-    @Column({ length: 100, nullable: true })
+    @Column({ type: "varchar", length: 100, nullable: true })
     name!: string | null;
 
     @CreateDateColumn()
-    created_at!: Date;
+    createdAt!: Date;
 
     @OneToMany(() => ChatMember, (chatMember) => chatMember.chat)
-    chatMembers!: ChatMember[];
+    members!: ChatMember[];
 
     @OneToMany(() => Message, (message) => message.chat)
     messages!: Message[];
+
+    @OneToOne(() => Message, { nullable: true })
+    @JoinColumn({ name: "last_message_id" })
+    lastMessage!: Message;
+
+    numParticipants?: number;
 }
