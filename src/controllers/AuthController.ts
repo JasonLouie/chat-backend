@@ -1,11 +1,7 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, CookieOptions } from "express";
 import { AuthService } from "../services/AuthService.js";
-
-interface CookieOptions {
-    httpOnly: boolean,
-    secure: boolean,
-    sameSite: boolean | "none" | "lax" | "strict" | undefined
-}
+import { TokenService, type Tokens } from "../services/TokenService.js";
+import { ProfileService } from "../services/ProfileService.js";
 
 const cookieOptions: CookieOptions = {
     httpOnly: true,
@@ -14,11 +10,6 @@ const cookieOptions: CookieOptions = {
 };
 
 const refreshTokenPath = "/api/auth";
-
-interface Tokens {
-    accessToken: string,
-    refreshToken: string
-}
 
 function sendCookies(tokens: Tokens, res: Response) {
     const { accessToken, refreshToken } = tokens;
@@ -39,11 +30,9 @@ function clearCookies(res: Response) {
 }
 
 export class AuthController {
-    private authService: AuthService;
-
-    constructor() {
-        this.authService = new AuthService;
-    }
+    private authService = new AuthService;
+    private profileService = new ProfileService;
+    private tokenService = new TokenService;
 
     /**
      * POST /api/auth/register
@@ -51,9 +40,10 @@ export class AuthController {
     async register(req: Request, res: Response, next: NextFunction) {
         try {
             const { username, email, password } = req.body;
-
             const user = await this.authService.register(username, email, password);
-
+            const [tokens, fullProfile] = await Promise.all([this.tokenService.generateTokens(user.id), this.profileService.getProfileWithUser(user.id)]);
+            sendCookies(tokens, res);
+            res.json(fullProfile);
         } catch (error: any) {
             next(error);
         }
@@ -63,6 +53,72 @@ export class AuthController {
      * POST /api/auth/login
      */
     async login(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+    
+    /**
+     * POST /api/auth/logout
+     */
+    async logout(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/auth/refresh
+     */
+    async refreshTokens(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/auth/password
+     */
+    async updatePassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/auth/email
+     */
+    async updateEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+
+    /**
+     * PUT /api/auth/username
+     */
+    async updateUsername(req: Request, res: Response, next: NextFunction) {
+        try {
+            
+        } catch (error: any) {
+            next(error);
+        }
+    }
+
+    /**
+     * DELETE /api/auth/delete
+     */
+    async deleteUser(req: Request, res: Response, next: NextFunction) {
         try {
             
         } catch (error: any) {

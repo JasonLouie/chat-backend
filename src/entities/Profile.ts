@@ -13,7 +13,12 @@ export class Profile {
     @Column({ type: "enum", enum: UserStatus, default: UserStatus.OFFLINE })
     status!: UserStatus;
 
-    @OneToOne(() => User, (user) => user.profile)
-    @JoinColumn()
+    @Column({ length: 500, nullable: true })
+    bio!: string | null;
+
+    @OneToOne(() => User, (user) => user.profile, {
+        onDelete: "CASCADE"
+    })
+    @JoinColumn({ name: "id" })
     user!: User;
 }

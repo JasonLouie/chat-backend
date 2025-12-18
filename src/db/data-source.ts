@@ -20,5 +20,6 @@ export const AppDataSource = new DataSource({
     entities: [User, Profile, Chat, ChatMember, Message, RefreshToken],
     migrations: [],
     subscribers: [],
+    timezone: "Z",
     ssl: { rejectUnauthorized: true }
 });

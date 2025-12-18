@@ -1,15 +1,22 @@
 import { AppDataSource } from "../db/data-source.js";
 import { User } from "../entities/User.js";
 import { Profile } from "../entities/Profile.js";
-import type { ValidationErrors } from "../middleware/validators.js";
 import { EndpointError } from "../classes/EndpointError.js";
 import bcrypt from "bcryptjs";
+import type { ValidationErrors } from "../types/validate.js";
 
 export class AuthService {
     private userRepository = AppDataSource.getRepository(User);
 
-    async getUserById(id: string, allowThrow = true) {
-        
+    async getUserById(userId: string, allowThrow = true) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            select: ["id", "username", "email", "password_hash"]
+        });
+
+        // User does not exist
+        if (!user && allowThrow) throw new EndpointError(404, "User does not exist.");
+        return user;
     }
 
     async register(username: string, email: string, password: string): Promise<User> {
@@ -46,6 +53,7 @@ export class AuthService {
         const newProfile = new Profile();
         newUser.profile = newProfile;
 
+        // Save the user to db. Also saves the attached profile because of cascade: true in entities/User.ts
         await this.userRepository.save(newUser);
         return newUser;
     }
@@ -56,16 +64,13 @@ export class AuthService {
             select: ["id", "username", "email", "password_hash"]
         });
 
-        if (!user) {
-            return null;
-        }
+        // User does not exist
+        if (!user) throw new EndpointError(404, "User does not exist.");
 
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
-        if (!isMatch) {
-            return null;
-        }
-
+        // Incorrect password
+        if (!isMatch) throw new EndpointError(401, "Invalid password.");
         return user;
     }
 }

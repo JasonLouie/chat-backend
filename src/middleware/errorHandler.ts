@@ -2,10 +2,10 @@ import { EndpointError } from "../classes/EndpointError.js";
 import type { Request, Response, NextFunction } from "express";
 
 interface Errors {
-    [key: string]: string[]
+    [key: string]: string[];
 }
 
-export function handleServerError(err: Error | EndpointError, req: Request, res: Response, next: NextFunction) {
+export function handleServerErrors(err: Error | EndpointError, req: Request, res: Response, next: NextFunction) {
     // Format TypeORM errors
     const errors: Errors = {};
 

@@ -1,27 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { EndpointError } from "../classes/EndpointError.js";
 import { titleCase } from "typeorm/util/StringUtils.js";
-
-interface RegexValidator {
-    regex: RegExp,
-    message: string
-}
-
-interface Rules {
-    [key: string]: string | boolean | number | RegExp | RegexValidator[],
-    regexes?: RegexValidator[],
-    regex?: RegExp,
-    message?: string,
-    minLength?: number
-}
-
-interface Validations {
-    [key: string]: Rules;
-}
-
-export interface ValidationErrors {
-    [key: string]: string[];
-}
+import type { RegexValidator, Rules, ValidationErrors, Validations } from "../types/validate.js";
 
 /**
  * 
