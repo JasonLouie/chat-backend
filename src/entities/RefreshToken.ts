@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { User } from "./User.js";
+import type { UUID } from "../types/common.js";
 
 @Entity({ name: "refresh_tokens" })
 export class RefreshToken {
@@ -7,7 +8,7 @@ export class RefreshToken {
     token!: string;
 
     @Column("uuid")
-    userId!: string;
+    userId!: UUID;
 
     @CreateDateColumn()
     createdAt!: Date;

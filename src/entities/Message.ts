@@ -9,17 +9,18 @@ import {
 import { MessageType } from "../enums.js";
 import { Chat } from "./Chat.js";
 import { User } from "./User.js";
+import type { UUID } from "../types/common.js";
 
 @Entity({ name: "messages" })
 export class Message {
     @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    id!: UUID;
 
     @Column("uuid")
-    chatId!: string;
+    chatId!: UUID;
 
     @Column("uuid")
-    senderId!: string;
+    senderId!: UUID;
 
     @Column({ type: "enum", enum: MessageType, default: MessageType.TEXT })
     type!: MessageType;

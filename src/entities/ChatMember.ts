@@ -2,14 +2,15 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn 
 import { UserRole } from "../enums.js";
 import { Chat } from "./Chat.js";
 import { User } from "./User.js";
+import type { UUID } from "../types/common.js";
 
 @Entity({ name: "chat_members"})
 export class ChatMember {
     @PrimaryColumn("uuid")
-    chatId!: string;
+    chatId!: UUID;
 
     @PrimaryColumn("uuid")
-    userId!: string;
+    userId!: UUID;
 
     // Database mapping: SQL column member_role -> role (TS)
     @Column({

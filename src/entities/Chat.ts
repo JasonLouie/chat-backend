@@ -1,11 +1,12 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { ChatMember } from "./ChatMember.js";
 import { Message } from "./Message.js";
+import type { UUID } from "../types/common.js";
 
 @Entity({ name: "chats" })
 export class Chat {
     @PrimaryGeneratedColumn("uuid")
-    id!: string;
+    id!: UUID;
 
     @Column({ type: "boolean", default: false })
     isGroup!: boolean;

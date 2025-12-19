@@ -1,6 +1,7 @@
 import { EndpointError } from "../classes/EndpointError.js";
 import { AppDataSource } from "../db/data-source.js";
 import { Profile } from "../entities/Profile.js";
+import type { UUID } from "../types/common.js";
 import type { ProfileResponse } from "../types/profile.js";
 
 export class ProfileService {
@@ -9,7 +10,7 @@ export class ProfileService {
     /**
      * GET /api/profile/me or /api/profile/uuid
      */
-    async getProfileWithUser(userId: string): Promise<ProfileResponse | null> {
+    async getProfileWithUser(userId: UUID): Promise<ProfileResponse | null> {
         const profile = await this.profileRepo.findOne({
             where: { id: userId },
             relations: {
@@ -40,4 +41,18 @@ export class ProfileService {
     /**
      * PATCH /api/profile/me - Modify imageUrl or bio
      */
+    async modifyProfile(userId: UUID, newImg?: string, newBio?: string) {
+        const updates = {
+            ...(newImg !== undefined && { imageUrl: newImg }),
+            ...(newBio !== undefined && { bio: newBio })
+        };
+
+        // Do not run DB query if there are no updates
+        if (Object.keys(updates).length === 0) return;
+
+        const result = await this.profileRepo.update(userId, updates);
+        if (result.affected === 0) {
+            throw new EndpointError(404, "Profile does not exist.");
+        }
+    }
 }

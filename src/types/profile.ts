@@ -1,7 +1,8 @@
 import type { UserStatus } from "../enums.js";
+import type { UUID } from "./common.js";
 
 export interface ProfileResponse {
-    id: string;
+    id: UUID;
     username: string;
     imageUrl: string | null;
     status: UserStatus;

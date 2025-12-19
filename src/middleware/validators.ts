@@ -4,11 +4,7 @@ import { titleCase } from "typeorm/util/StringUtils.js";
 import type { RegexValidator, Rules, ValidationErrors, Validations } from "../types/validate.js";
 
 /**
- * 
- * @param validations 
- * @param req - Request
- * @param res - Response
- * @param next - Next
+ * Validates the request body based on the validations object provided
  */
 function validate(validations: Validations, req: Request, res: Response, next: NextFunction) {
     const validationErrors: ValidationErrors = {};
@@ -100,12 +96,17 @@ const passwordRules = {
     required: true
 };
 
-// AUTH AND USER VALIDATORS
+const imageUrlRules = {
+    
+};
+
+const bioRules = {
+
+}
+
+// Auth Validators
 /**
  * Middleware that validates the request body when user registers
- * @param req - Request
- * @param res - Response
- * @param next - Next
  */
 export function validateRegistration(req: Request, res: Response, next: NextFunction) {
     const confirmPassword = req.body?.confirmPassword || "";
@@ -119,9 +120,6 @@ export function validateRegistration(req: Request, res: Response, next: NextFunc
 
 /**
  * Middleware that validates the request body when user logs in
- * @param req - Request
- * @param res - Response
- * @param next - Next
  */
 export function validateLogin(req: Request, res: Response, next: NextFunction) {
     const validations = {
@@ -132,25 +130,19 @@ export function validateLogin(req: Request, res: Response, next: NextFunction) {
 }
 
 /**
- * Middleware that validates the request body when user modifies their credentials
- * @param req - Request
- * @param res - Response
- * @param next - Next
+ * Middleware that validates the request body (new username) when user modifies their username
  */
-export function validateModifyUser(req: Request, res: Response, next: NextFunction) {
+export function validateModifyUsername(req: Request, res: Response, next: NextFunction) {
     const validations = {
-        username: {...usernameRules, required: false}
+        newUsername: usernameRules
     };
     validate(validations, req, res, next);
 }
 
 /**
- * Middleware that validates the request body when user resets password
- * @param req - Request
- * @param res - Response
- * @param next - Next
+ * Middleware that validates the request body (old and new password) when user modifies their password
  */
-export function validateResetPassword(req: Request, res: Response, next: NextFunction) {
+export function validateModifyPassword(req: Request, res: Response, next: NextFunction) {
     const validations = {
         oldPassword: requiredRule,
         newPassword: passwordRules
@@ -159,15 +151,22 @@ export function validateResetPassword(req: Request, res: Response, next: NextFun
 }
 
 /**
- * Middleware that validates the request body (email and password) when user changes email
- * @param req - Request
- * @param res - Response
- * @param next - Next
+ * Middleware that validates the request body (new email and password) when user changes email
  */
-export function validateEmail(req: Request, res: Response, next: NextFunction) {
+export function validateModifyEmail(req: Request, res: Response, next: NextFunction) {
     const validations = {
         newEmail: emailRules,
         password: requiredRule
     };
+    validate(validations, req, res, next);
+}
+
+// Profile Validators
+
+export function validateModifyProfile(req: Request, res: Response, next: NextFunction) {
+    const validations = {
+        newImageUrl: imageUrlRules,
+        newBio: bioRules
+    }
     validate(validations, req, res, next);
 }

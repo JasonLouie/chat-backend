@@ -1,11 +1,12 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { User } from "./User.js";
 import { UserStatus } from "../enums.js";
+import type { UUID } from "../types/common.js";
 
 @Entity({ name: "profiles" })
 export class Profile {
     @PrimaryColumn("uuid")
-    id!: string;
+    id!: UUID;
 
     @Column({ type: "varchar", length: 255, nullable: true })
     imageUrl!: string | null;

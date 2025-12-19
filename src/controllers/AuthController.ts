@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction, CookieOptions } from "express";
 import { AuthService } from "../services/AuthService.js";
-import { TokenService, type Tokens } from "../services/TokenService.js";
+import { TokenService } from "../services/TokenService.js";
 import { ProfileService } from "../services/ProfileService.js";
+import type { Tokens } from "../types/common.js";
+import type { User } from "../entities/User.js";
 
 const cookieOptions: CookieOptions = {
     httpOnly: true,
@@ -44,8 +46,8 @@ export class AuthController {
             const [tokens, fullProfile] = await Promise.all([this.tokenService.generateTokens(user.id), this.profileService.getProfileWithUser(user.id)]);
             sendCookies(tokens, res);
             res.json(fullProfile);
-        } catch (error: any) {
-            next(error);
+        } catch (err) {
+            next(err);
         }
     }
 
@@ -54,9 +56,12 @@ export class AuthController {
      */
     async login(req: Request, res: Response, next: NextFunction) {
         try {
-            
-        } catch (error: any) {
-            next(error);
+            const user = req.user as User;
+            const [tokens, fullProfile] = await Promise.all([this.tokenService.generateTokens(user.id), this.profileService.getProfileWithUser(user.id)]);
+            sendCookies(tokens, res);
+            res.json(fullProfile);
+        } catch (err) {
+            next(err);
         }
     }
     
@@ -65,9 +70,11 @@ export class AuthController {
      */
     async logout(req: Request, res: Response, next: NextFunction) {
         try {
-            
-        } catch (error: any) {
-            next(error);
+            await this.tokenService.removeToken(req.cookies);
+            clearCookies(res);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
         }
     }
 
@@ -76,31 +83,11 @@ export class AuthController {
      */
     async refreshTokens(req: Request, res: Response, next: NextFunction) {
         try {
-            
-        } catch (error: any) {
-            next(error);
-        }
-    }
-
-    /**
-     * PUT /api/auth/password
-     */
-    async updatePassword(req: Request, res: Response, next: NextFunction) {
-        try {
-            
-        } catch (error: any) {
-            next(error);
-        }
-    }
-
-    /**
-     * PUT /api/auth/email
-     */
-    async updateEmail(req: Request, res: Response, next: NextFunction) {
-        try {
-            
-        } catch (error: any) {
-            next(error);
+            const tokens = await this.tokenService.refresh(req.cookies);
+            sendCookies(tokens, res);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
         }
     }
 
@@ -109,9 +96,40 @@ export class AuthController {
      */
     async updateUsername(req: Request, res: Response, next: NextFunction) {
         try {
-            
-        } catch (error: any) {
-            next(error);
+            const user = req.user as User;
+            const { newUsername } = req.body;
+            await this.authService.updateUsername(user.id, newUsername);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * PUT /api/auth/password
+     */
+    async updatePassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = req.user as User;
+            const { oldPassword, newPassword } = req.body;
+            await this.authService.updatePassword(user.id, oldPassword, newPassword);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * PUT /api/auth/email
+     */
+    async updateEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = req.user as User;
+            const { newEmail, password } = req.body;
+            await this.authService.updateEmail(user.id, newEmail, password);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
         }
     }
 
@@ -120,9 +138,12 @@ export class AuthController {
      */
     async deleteUser(req: Request, res: Response, next: NextFunction) {
         try {
-            
-        } catch (error: any) {
-            next(error);
+            const user = req.user as User;
+            await this.authService.deleteUser(user.id);
+            clearCookies(res);
+            res.sendStatus(204);
+        } catch (err) {
+            next(err);
         }
     }
 }
