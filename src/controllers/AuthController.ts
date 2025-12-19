@@ -43,7 +43,10 @@ export class AuthController {
         try {
             const { username, email, password } = req.body;
             const user = await this.authService.register(username, email, password);
-            const [tokens, fullProfile] = await Promise.all([this.tokenService.generateTokens(user.id), this.profileService.getProfileWithUser(user.id)]);
+            const [tokens, fullProfile] = await Promise.all([
+                this.tokenService.generateTokens(user.id),
+                this.profileService.getProfile(user.id)
+            ]);
             sendCookies(tokens, res);
             res.json(fullProfile);
         } catch (err) {
@@ -57,7 +60,10 @@ export class AuthController {
     async login(req: Request, res: Response, next: NextFunction) {
         try {
             const user = req.user as User;
-            const [tokens, fullProfile] = await Promise.all([this.tokenService.generateTokens(user.id), this.profileService.getProfileWithUser(user.id)]);
+            const [tokens, fullProfile] = await Promise.all([
+                this.tokenService.generateTokens(user.id),
+                this.profileService.getProfile(user.id)
+            ]);
             sendCookies(tokens, res);
             res.json(fullProfile);
         } catch (err) {

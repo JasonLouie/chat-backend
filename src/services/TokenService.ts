@@ -3,7 +3,7 @@ import jwt, { type SignOptions } from "jsonwebtoken";
 import { RefreshToken } from "../entities/RefreshToken.js";
 import { EndpointError } from "../classes/EndpointError.js";
 import { randomBytes } from "crypto";
-import type { Tokens, UUID } from "../types/common.js";
+import type { Token, Tokens, UUID } from "../types/common.js";
 
 export class TokenService {
     private tokenRepo = AppDataSource.getRepository(RefreshToken);
@@ -20,12 +20,13 @@ export class TokenService {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + parseInt(process.env.REFRESH_TOKEN_DAYS || "7"));
         
-        const dbToken = this.tokenRepo.create({
+        // Save refresh token to DB
+        await this.tokenRepo.save({
             token: refreshToken,
-            userId: userId,
-            expiresAt: expiresAt
+            userId,
+            expiresAt
         });
-        await this.tokenRepo.save(dbToken)
+
         return { accessToken, refreshToken };
     }
 
@@ -66,10 +67,7 @@ export class TokenService {
 
         let dbToken;
         try {
-            dbToken = await this.tokenRepo.findOne({
-                where: { token: refreshToken },
-                select: ["token", "userId", "expiresAt"]
-            });
+            dbToken = await this.findToken(refreshToken);
         } catch (error) {
             throw new EndpointError(500, "Server error during logout.");
         }
@@ -79,4 +77,11 @@ export class TokenService {
 
         await this.tokenRepo.remove(dbToken);
     }
+
+    private async findToken(token: Token) {
+        return await this.tokenRepo.findOne({
+            where: { token },
+            select: ["token", "userId", "expiresAt"]
+        });
+    } 
 }

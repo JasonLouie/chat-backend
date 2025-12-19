@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, Prim
 import { ChatMember } from "./ChatMember.js";
 import { Message } from "./Message.js";
 import type { UUID } from "../types/common.js";
+import { ChatType } from "../enums.js";
 
 @Entity({ name: "chats" })
 export class Chat {
@@ -16,6 +17,9 @@ export class Chat {
 
     @Column({ type: "varchar", length: 100, nullable: true })
     name!: string | null;
+
+    @Column({ type: "enum", enum: ChatType, default: ChatType.DM })
+    type!: ChatType;
 
     @CreateDateColumn()
     createdAt!: Date;

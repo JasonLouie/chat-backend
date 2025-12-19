@@ -5,10 +5,14 @@ export enum UserStatus {
     AWAY = "away"
 }
 
-export enum UserRole {
-    ADMIN = "admin",
-    MODERATOR = "moderator",
+export enum ChatRole {
+    OWNER = "owner",
     MEMBER = "member"
+}
+
+export enum ChatType {
+    DM = "dm",
+    GROUP = "group"
 }
 
 export enum MessageType {

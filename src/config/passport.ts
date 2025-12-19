@@ -18,7 +18,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 }));
 
 // JWT Strategy for verifying access token
-const cookieExtractor = (req: Request) => {
+function cookieExtractor (req: Request) {
     return req?.cookies?.["accessToken"] || null;
 }
 

@@ -1,6 +1,8 @@
 export type UUID = string;
 
+export type Token = string;
+
 export interface Tokens {
-    accessToken: string;
-    refreshToken: string;
+    accessToken: Token;
+    refreshToken: Token;
 }

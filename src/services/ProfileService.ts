@@ -8,9 +8,10 @@ export class ProfileService {
     private profileRepo = AppDataSource.getRepository(Profile);
 
     /**
-     * GET /api/profile/me or /api/profile/uuid
+     * Returns a user's profile. If it doesn't exist, an error is thrown.
      */
-    async getProfileWithUser(userId: UUID): Promise<ProfileResponse | null> {
+    async getProfile(userId: UUID | undefined): Promise<ProfileResponse> {
+        if (userId === undefined) throw new EndpointError(400, "User id is required.");
         const profile = await this.profileRepo.findOne({
             where: { id: userId },
             relations: {

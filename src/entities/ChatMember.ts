@@ -1,5 +1,5 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { UserRole } from "../enums.js";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
+import { ChatRole } from "../enums.js";
 import { Chat } from "./Chat.js";
 import { User } from "./User.js";
 import type { UUID } from "../types/common.js";
@@ -16,13 +16,16 @@ export class ChatMember {
     @Column({
         name: "member_role",
         type: "enum",
-        enum: UserRole,
-        default: UserRole.MEMBER
+        enum: ChatRole,
+        default: ChatRole.MEMBER
     })
-    role!: UserRole;
+    role!: ChatRole;
 
     @CreateDateColumn()
     joinedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt!: Date;
 
     @Column({ type: "datetime", nullable: true })
     lastReadAt!: Date | null;

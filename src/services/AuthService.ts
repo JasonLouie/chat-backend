@@ -15,7 +15,7 @@ export class AuthService {
         });
     }
 
-    private async findUser(id: UUID) {
+    private async findUserOrThrow(id: UUID) {
         const user = await this.userRepo.findOne({
             where: { id },
             select: { id: true, username: true, email: true, password: true }
@@ -24,8 +24,8 @@ export class AuthService {
         return user;
     }
 
-    // Used when showing the user's private account info
-    async getUserFull(id: UUID) {
+    // Used when showing the user's private account info (email is usually hidden)
+    async getUserFullorThrow(id: UUID) {
         const user = await this.userRepo.findOne({
             where: { id },
             select: { id: true, username: true, email: true }
@@ -87,14 +87,14 @@ export class AuthService {
     }
 
     async updateUsername(id: UUID, newUsername: string) {
-        const [user, existingUser] = await Promise.all([this.findUser(id), this.userRepo.findOne({ where: { username: newUsername  }, select: { username: true } })]);
+        const [user, existingUser] = await Promise.all([this.findUserOrThrow(id), this.userRepo.findOne({ where: { username: newUsername  }, select: { username: true } })]);
         if (existingUser) throw new EndpointError(400, {username: ["Username is taken."]});
         user.username = newUsername;
         this.userRepo.save(user);
     }
 
     async updatePassword(id: UUID, oldPassword: string, newPassword: string) {
-        const user = await this.findUser(id);
+        const user = await this.findUserOrThrow(id);
         const isMatch = await user.comparePassword(oldPassword);
 
         if (!isMatch) throw new EndpointError(400, {password: ["Incorrect password."]});
@@ -105,7 +105,7 @@ export class AuthService {
     }
 
     async updateEmail(id: UUID, newEmail: string, password: string) {
-        const [user, existingUser] = await Promise.all([this.findUser(id), this.userRepo.findOne({ where: { email: newEmail }, select: { email: true } })]);
+        const [user, existingUser] = await Promise.all([this.findUserOrThrow(id), this.userRepo.findOne({ where: { email: newEmail }, select: { email: true } })]);
         const isMatch = await user.comparePassword(password);
 
         if (!isMatch) throw new EndpointError(400, {password: ["Incorrect password."]});
