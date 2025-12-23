@@ -10,8 +10,7 @@ export class ProfileService {
     /**
      * Returns a user's profile. If it doesn't exist, an error is thrown.
      */
-    async getProfile(userId: UUID | undefined): Promise<ProfileResponse> {
-        if (userId === undefined) throw new EndpointError(400, "User id is required.");
+    public getProfile = async (userId: UUID): Promise<ProfileResponse> => {
         const profile = await this.profileRepo.findOne({
             where: { id: userId },
             relations: {
@@ -42,7 +41,7 @@ export class ProfileService {
     /**
      * PATCH /api/profile/me - Modify imageUrl or bio
      */
-    async modifyProfile(userId: UUID, newImg?: string, newBio?: string) {
+    public modifyProfile = async (userId: UUID, newImg?: string, newBio?: string): Promise<void> => {
         const updates = {
             ...(newImg !== undefined && { imageUrl: newImg }),
             ...(newBio !== undefined && { bio: newBio })

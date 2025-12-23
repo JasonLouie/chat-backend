@@ -11,7 +11,7 @@ export class TokenService {
     /**
      * Generates access and refresh tokens
      */
-    async generateTokens(userId: UUID): Promise<Tokens> {
+    public generateTokens = async (userId: UUID): Promise<Tokens> => {
         const expiresIn = process.env.TOKEN_EXPIRATION as SignOptions["expiresIn"] || "1h";
         const accessToken = jwt.sign({ sub: userId }, process.env.TOKEN_SECRET as string, { expiresIn: expiresIn });
         
@@ -33,7 +33,7 @@ export class TokenService {
     /**
      * Refreshes access and refresh tokens if user provides a valid refresh token
      */
-    async refresh(cookies: Record<string, string>): Promise<Tokens> {
+    public refresh = async (cookies: Record<string, string>): Promise<Tokens> => {
         if (!cookies?.refreshToken) throw new EndpointError(400, "Refresh token is required.");
         const refreshToken = cookies.refreshToken;
 
@@ -61,7 +61,7 @@ export class TokenService {
     /**
      * Removes refresh token when user logs out
      */
-    async removeToken(cookies: Record<string, string>) {
+    public removeToken = async (cookies: Record<string, string>) => {
         if (!cookies?.refreshToken) return; // User is already logged out since there is no cookie or refresh token.
         const refreshToken = cookies.refreshToken;
 
@@ -78,7 +78,7 @@ export class TokenService {
         await this.tokenRepo.remove(dbToken);
     }
 
-    private async findToken(token: Token) {
+    private findToken = async (token: Token) => {
         return await this.tokenRepo.findOne({
             where: { token },
             select: ["token", "userId", "expiresAt"]

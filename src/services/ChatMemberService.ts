@@ -4,27 +4,28 @@ import { AppDataSource } from "../db/data-source.js";
 import { ChatMember } from "../entities/ChatMember.js";
 import type { UUID } from "../types/common.js";
 import { ChatRole, ChatType } from "../enums.js";
-import type { ChatService } from "./ChatService.js";
 import type { DataSource } from "typeorm/browser";
 
 export class ChatMemberService {
-    private chatService: ChatService
     private dataSource: DataSource;
 
-    constructor(chatService: ChatService) {
+    constructor() {
         this.dataSource = AppDataSource;
-        this.chatService = chatService;
     }
 
     /**
      * Handles leaving chats (DMs and Groups)
      */
-    async leaveChat(chatId: UUID, userId: UUID) {
+    public leaveChat = async (chatId: UUID, userId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             // Get member
-            const member = await this.getMemberOrThrow(manager, chatId, userId);
-            const { chat } = member;
+            const member = await this.validateChatMembership(manager, chatId, userId, true);
+            
+            // If member is null, user already left the chat
+            if (!member) return;
 
+            // Handle different chat types
+            const { chat } = member;
             if (chat.type === ChatType.DM) {
                 // Hide the member
                 await this.softDeleteMember(manager, member);
@@ -37,22 +38,23 @@ export class ChatMemberService {
     // Chat Group Only
 
     /**
-     * Any member can add others to the group if the group is less than 10 members
+     * Add others to the group if the group is less than 10 members. All members are allowed to add new users to a group.
      */
-    async addMember(chatId: UUID, initiatingUserId: UUID, newMemberId: UUID) {
+    public addMember = async (chatId: UUID, initiatingUserId: UUID, newMemberId: UUID): Promise<ChatMember> => {
         return await this.dataSource.transaction(async (manager) => {
+            // Check if user is in the chat
+            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            
             // Check if the chat is a group
-            const chat = await this.chatService.getChatOrThrow(manager, chatId);
+            const { chat } = initiatingUser;
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot add members to a private chat.");
 
             // Check if the initiating user is in the group
-            const [initiatingUser, memberCount, existingMember] = await Promise.all([
-                this.getExistingMember(manager, chatId, initiatingUserId),
+            const [memberCount, existingMember] = await Promise.all([
                 this.countMembers(manager, chatId),
                 this.getExistingMember(manager, chatId, newMemberId, true)
             ]);
 
-            if (!initiatingUser) throw new EndpointError(401, "Cannot add a member to a group you are not part of.");
             if (memberCount >= 10) throw new EndpointError(400, "Chat is full.");
             if (initiatingUserId === newMemberId) throw new EndpointError(400, "Cannot add yourself to a group.");
 
@@ -67,26 +69,27 @@ export class ChatMemberService {
             }
 
             // Handle adding a new member
-            await manager.save(ChatMember, {
+            return await manager.save(ChatMember, {
                 chatId,
                 userId: newMemberId
             });
         });
     }
 
-    async removeMember(chatId: UUID, initiatingUserId: UUID, memberId: UUID) {
+    /**
+     * Removes an existing member from the group. Only the group owner can do this.
+     */
+    public removeMember = async (chatId: UUID, initiatingUserId: UUID, memberId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
+            // Check if user is in the chat
+            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            
             // Check if the chat is a group
-            const chat = await this.chatService.getChatOrThrow(manager, chatId);
+            const { chat } = initiatingUser;
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
-            const [initiatingUser, memberToRemove] = await Promise.all([
-                this.getExistingMember(manager, chatId, initiatingUserId),
-                this.getExistingMember(manager, chatId, memberId)
-            ]);
-
-            if (!initiatingUser) throw new EndpointError(401, "Cannot remove a member from a chat group you are not part of.");
+            const memberToRemove = await this.getExistingMember(manager, chatId, memberId);
             
             // Only OWNER can kick people
             if (initiatingUser.role !== ChatRole.OWNER) throw new EndpointError(403, "Only owners can remove members from a chat group.");
@@ -102,20 +105,21 @@ export class ChatMemberService {
         });
     }
 
-    async switchOwnership(chatId: UUID, initiatingUserId: UUID, newOwnerId: UUID) {
+    /**
+     * Transfers ownership to a particular user. Only the group owner can do this.
+     */
+    public transferOwnership = async (chatId: UUID, initiatingUserId: UUID, newOwnerId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
+            // Check if user is in the chat
+            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            
             // Check if the chat is a group
-            const chat = await this.chatService.getChatOrThrow(manager, chatId);
+            const { chat } = initiatingUser;
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
-            const [initiatingUser, newOwner] = await Promise.all([
-                this.getExistingMember(manager, chatId, initiatingUserId),
-                this.getExistingMember(manager, chatId, newOwnerId)
-            ]);
+            const newOwner = await this.getExistingMember(manager, chatId, newOwnerId);
 
-            if (!initiatingUser) throw new EndpointError(401, "Cannot transfer ownership for a chat group you are not part of.");
-            
             // Only OWNER can kick people
             if (initiatingUser.role !== ChatRole.OWNER) throw new EndpointError(403, "Only owners can remove members from a chat group.");
             
@@ -126,47 +130,70 @@ export class ChatMemberService {
             if (!newOwner) throw new EndpointError(400, "Cannot transfer ownership to someone who is not in the chat group.");
 
             // Handle transfering ownership
-            await this.transferOwnership(manager, chat.id, initiatingUserId, newOwner);
+            await this.handleNewOwner(manager, chat.id, initiatingUserId, newOwner);
         });
     }
-
-    async validateChatMembership(manager: EntityManager, chatId: UUID, userId: UUID) {
-        const member = await manager.findOne(ChatMember, {
-            where: { chatId, userId },
-            select: ["chatId"]
-        });
-        if (!member) throw new EndpointError(403, "You are not a member of this chat.");
-    }
-
-    // Private helper methods
 
     /**
-     * Check if the member exists. Optionally include members that were deleted
+     * Validates if the user is in a chat. Returns the member. Throws an error if the user is not a member of that chat. Optionally include chat.
      */
-    private async getExistingMember(manager: EntityManager, chatId: UUID, userId: UUID, withDeleted: boolean = false) {
-        return await manager.findOne(ChatMember, {
+    public validateChatMembership = async (manager: EntityManager, chatId: UUID, userId: UUID, withChat: boolean = false): Promise<ChatMember> => {
+        const member = await manager.findOne(ChatMember, {
             where: { chatId, userId },
+            ...(!withChat ? { select: ["chatId"] } : { relations: { chat: true} }),
+        });
+        if (!member) throw new EndpointError(403, "You are not a member of this chat.");
+        return member;
+    }
+
+    /**
+     * Check if the member exists. Optionally include members that were deleted. Optionally exclude a particular user id from the search
+     */
+    public getExistingMember = async (manager: EntityManager, chatId: UUID, userId: UUID, withDeleted: boolean = false, exclude: boolean = false): Promise<ChatMember | null> => {
+        return await manager.findOne(ChatMember, {
+            where: {
+                chatId,
+                userId: exclude ? Not(userId) : userId
+            },
             withDeleted
         });
     }
 
     /**
-     * Returns the chat member with a particular chatId and userId. If none exists, throws an error.
+     * Creates Chat DM members
      */
-    private async getMemberOrThrow(manager: EntityManager, chatId: UUID, userId: UUID) {
-        const member = await manager.findOne(ChatMember, {
-            where: { chatId, userId },
-            relations: { chat: true }
-        });
+    public createDMMembers = async (manager: EntityManager, chatId: UUID, userIds: UUID[]): Promise<void> => {
+        const members = this.createChatMembers(manager, chatId, userIds);
+        await manager.save(ChatMember, members);
+    }
 
-        if (!member) throw new EndpointError(404, "Member not found.");
-        return member;
+    /**
+     * Creates Chat Group members
+     */
+    public createGroupMembers = async (manager: EntityManager, chatId: UUID, memberIds: UUID[], creatorId: UUID): Promise<void> => {
+        // Handle members
+        const members = this.createChatMembers(manager, chatId, memberIds);
+
+        // Handle creator
+        members.push(manager.create(ChatMember, { chatId, userId: creatorId, role: ChatRole.OWNER }));
+        
+        await manager.save(ChatMember, members);
+    }
+
+
+    // Private helper methods
+
+    /**
+     * Returns an array of Chat Member entities
+     */
+    private createChatMembers = (manager: EntityManager, chatId: UUID, memberIds: UUID[]): ChatMember[] => {
+        return memberIds.map((userId: UUID) => manager.create(ChatMember, { chatId, userId, role: ChatRole.MEMBER }));
     }
 
     /**
      * Counts the number of members in a group. Optional currentUserId to exclude a user from the count
      */
-    private async countMembers(manager: EntityManager, chatId: UUID, currentUserId?: UUID) {
+    private countMembers = async (manager: EntityManager, chatId: UUID, currentUserId?: UUID): Promise<number> => {
         return await manager.count(ChatMember, {
             where: {
                 chatId,
@@ -178,17 +205,23 @@ export class ChatMemberService {
     /**
      * Handles leaving a group
      */
-    private async handleGroupLeave(manager: EntityManager, member: ChatMember) {
+    private handleGroupLeave = async (manager: EntityManager, member: ChatMember): Promise<void> => {
         // Check if the person leaving is the last one in the group
         const remainingCount = await this.countMembers(manager, member.chatId, member.userId);
         
         if (remainingCount === 0) {
-            await this.chatService.softDeleteChat(manager, member.chat);
-            return; // Chat is removed and related data is deleted via cascade
+            // Delete the group
+            await manager.softRemove(member.chat);
+
+            // Delete last member
+            await this.softDeleteMember(manager, member);
+            return;
         }
 
         // Check if chat needs a new owner
-        if (member.role === ChatRole.OWNER) await this.transferOwnership(manager, member.chatId, member.userId);
+        if (member.role === ChatRole.OWNER) {
+            await this.handleNewOwner(manager, member.chatId, member.userId);
+        }
 
         // Handle user leaving the group
         await this.softDeleteMember(manager, member);
@@ -197,7 +230,7 @@ export class ChatMemberService {
     /**
      * Handles transferring ownership to a particular chat member or member with most seniority
      */
-    private async transferOwnership(manager: EntityManager, chatId: UUID, currentOwnerId: UUID, newOwner?: ChatMember) {
+    private handleNewOwner = async (manager: EntityManager, chatId: UUID, currentOwnerId: UUID, newOwner?: ChatMember): Promise<void> => {
         const seniorMember = newOwner || await manager.findOne(ChatMember,{
             where: {
                 chatId,
@@ -220,8 +253,10 @@ export class ChatMemberService {
         }
     }
 
-    private async softDeleteMember(manager: EntityManager, member: ChatMember) {
+    /**
+     * Soft deletes a particular chat member
+     */
+    private softDeleteMember = async (manager: EntityManager, member: ChatMember): Promise<void> => {
         await manager.softRemove(ChatMember, member);
     }
-
 }

@@ -12,7 +12,7 @@ export class ProfileController {
     /**
      * GET /api/profile/me
      */
-    async getMyProfile(req: Request, res: Response, next: NextFunction) {
+    public getMyProfile = async(req: Request, res: Response, next: NextFunction) => {
         try {
             const { id } = req.user as User;
             const profile = await this.profileService.getProfile(id);
@@ -25,10 +25,10 @@ export class ProfileController {
     /**
      * GET /api/profile/:id
      */
-    async getUserProfile(req: Request, res: Response, next: NextFunction) {
+    public getUserProfile = async(req: Request, res: Response, next: NextFunction) => {
         try {
             const { id } = req.params;
-            const profile = await this.profileService.getProfile(id);
+            const profile = await this.profileService.getProfile(id!);
             res.json(profile);
         } catch (err) {
             next(err);
@@ -38,7 +38,7 @@ export class ProfileController {
     /**
      * PATCH /api/profile/me - Modify imageUrl or bio
      */
-    async modifyProfile(req: Request, res: Response, next: NextFunction) {
+    public modifyProfile = async(req: Request, res: Response, next: NextFunction) => {
         try {
             const { id } = req.user as User;
             const { newImg, newBio } = req.body;

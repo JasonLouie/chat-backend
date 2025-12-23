@@ -1,13 +1,11 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
-import cors from "cors";
-import "./config/passport.js";
 import { AppDataSource } from "./db/data-source.js";
 import { handleServerErrors } from "./middleware/errorHandler.js";
 import { logRequest } from "./middleware/requestLogger.js";
-import { protect } from "./middleware/auth.js";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,11 +24,6 @@ try {
 
     app.use(logRequest);
     
-    app.use("/api/auth", );
-    app.use("/api/profiles", protect, );
-    app.use("/api/chats", protect, );
-    app.use("/api/messages", protect, );
-
     app.use(handleServerErrors);
 
     app.listen(port, () => {

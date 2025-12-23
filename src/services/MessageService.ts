@@ -2,28 +2,25 @@ import { Between, ILike, LessThan, MoreThan, type EntityManager, type FindOption
 import { AppDataSource } from "../db/data-source.js";
 import { Chat } from "../entities/Chat.js";
 import { Message } from "../entities/Message.js";
-import { MessageType } from "../enums.js";
-import type { UUID } from "../types/common.js";
+import { ChatType, MessageType } from "../enums.js";
 import { EndpointError } from "../classes/EndpointError.js";
-import type { ChatMemberService } from "./ChatMemberService.js";
+import { ChatMemberService } from "./ChatMemberService.js";
+import type { UUID } from "../types/common.js";
 import type { DataSource } from "typeorm/browser";
-import type { ChatService } from "./ChatService.js";
 
 export class MessageService {
     private dataSource: DataSource;
-    private chatService: ChatService;
     private chatMemberService: ChatMemberService;
 
-    constructor(chatService: ChatService, chatMemberService: ChatMemberService) {
+    constructor(chatMemberService: ChatMemberService) {
         this.dataSource = AppDataSource;
-        this.chatService = chatService;
         this.chatMemberService = chatMemberService;
     }
 
     /**
      * Toggle pinning a message. Allow users to toggle pinning messages regardless of the sender.
      */
-    async toggleMessagePinned(messageId: UUID, chatId: UUID, userId: UUID) {
+    public toggleMessagePinned = async (messageId: UUID, chatId: UUID, userId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             await this.chatMemberService.validateChatMembership(manager, chatId, userId);
 
@@ -33,51 +30,65 @@ export class MessageService {
         });
     }
 
-    async searchMessages(chatId: UUID, userId: UUID, keyword?: string, type?: MessageType, beforeDate?: Date, afterDate?: Date, pinned?: boolean): Promise<Message[]> {
-        return await this.dataSource.transaction(async (manager) => {
-            await this.chatMemberService.validateChatMembership(manager, chatId, userId);
+    /**
+     * Search for messages
+     */
+    public searchMessages = async (chatId: UUID, userId: UUID, keyword?: string, type?: MessageType, beforeDate?: Date, afterDate?: Date, pinned?: boolean): Promise<Message[]> => {
+        const manager = this.dataSource.manager;
+        await this.chatMemberService.validateChatMembership(manager, chatId, userId);
 
-            const where: FindOptionsWhere<Message> = {
-                chatId
-            };
+        const where: FindOptionsWhere<Message> = {
+            chatId
+        };
 
-            // Date Filters
-            if (beforeDate && afterDate) {
-                where.createdAt = Between(afterDate, beforeDate);
-            } else if (beforeDate) {
-                where.createdAt = LessThan(beforeDate);
-            } else if (afterDate) {
-                where.createdAt = MoreThan(afterDate);
-            }
+        // Date Filters
+        if (beforeDate && afterDate) {
+            where.createdAt = Between(afterDate, beforeDate);
+        } else if (beforeDate) {
+            where.createdAt = LessThan(beforeDate);
+        } else if (afterDate) {
+            where.createdAt = MoreThan(afterDate);
+        }
 
-            // Type Filter
-            if (type) {
-                where.type = type;
-            }
+        // Type Filter
+        if (type) {
+            where.type = type;
+        }
 
-            // Pinned Filter
-            if (pinned !== undefined) {
-                where.pinned = pinned;
-            }
+        // Pinned Filter
+        if (pinned !== undefined) {
+            where.pinned = pinned;
+        }
 
-            // Only search by keyword for text
-            const isSearchable = !type || type === MessageType.TEXT;
+        // Only search by keyword for text
+        const isSearchable = !type || type === MessageType.TEXT;
 
-            if (keyword && isSearchable) {
-                where.content = ILike(`%${keyword}%`);
-            }
+        if (keyword && isSearchable) {
+            where.content = ILike(`%${keyword}%`);
+        }
 
-            return await manager.find(Message, {
-                where,
-                order: { createdAt: "DESC" },
-                relations: { sender: true }
-            });
+        return await manager.find(Message, {
+            where,
+            order: { createdAt: "DESC" },
+            relations: { sender: true }
         });
     }
 
-    async sendMessage(chatId: UUID, senderId: UUID, content: string, type?: MessageType) {
+    /**
+     * Handles sending messages in a chat group
+     */
+    public sendMessage = async (chatId: UUID, senderId: UUID, content: string, type?: MessageType): Promise<Message> => {
         return await this.dataSource.transaction(async (manager) => {
-            await this.chatMemberService.validateChatMembership(manager, chatId, senderId);
+            const { chat } = await this.chatMemberService.validateChatMembership(manager, chatId, senderId, true);
+
+            if (chat.type === ChatType.DM) {
+                // Find the recipient
+                const recipientMember = await this.chatMemberService.getExistingMember(manager, chatId, senderId, true, true);
+                
+                if (recipientMember && recipientMember.deletedAt) {
+                    await manager.recover(recipientMember);
+                }
+            }
 
             const newMessage = await manager.save(Message, {
                 chatId,
@@ -87,10 +98,14 @@ export class MessageService {
             });
 
             await this.updateLastMessage(manager, chatId, newMessage);
+            return newMessage;
         });
     }
 
-    async updateMessage(messageId: UUID, chatId: UUID, userId: UUID, newContent: string) {
+    /**
+     * Handles updating a message
+     */
+    public updateMessage = async (messageId: UUID, chatId: UUID, userId: UUID, newContent: string): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             await this.chatMemberService.validateChatMembership(manager, chatId, userId);
 
@@ -107,17 +122,22 @@ export class MessageService {
         });
     }
 
-    async deleteMessage(messageId: UUID, chatId: UUID, userId: UUID) {
+    /**
+     * Handles deleting a message
+     */
+    public deleteMessage = async (messageId: UUID, chatId: UUID, userId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
-            await this.chatMemberService.validateChatMembership(manager, chatId, userId);
+            await this.chatMemberService.validateChatMembership(manager, chatId, userId, true);
+                        
+            const chat = await manager.findOne(Chat, {
+                where: { id: chatId },
+                relations: { lastMessage: true }
+            });
+            if (!chat) throw new EndpointError(404, "Chat not found.");
 
             const message = await this.findMessageOrThrow(manager, messageId);
 
             if (userId !== message.senderId) throw new EndpointError(403, "Cannot delete messages that do not belong to you.");
-            
-            const chat = await this.chatService.getChatOrThrow(manager, chatId, true);
-
-            if (!chat) throw new EndpointError(404, "Chat not found");
 
             const isLatestMessage = chat.lastMessage?.id === message.id;
 
@@ -127,13 +147,19 @@ export class MessageService {
         });
     }
 
-    private async findMessageOrThrow(manager: EntityManager, messageId: UUID) {
+    /**
+     * Returns a particular message by messageId. Throws an error if the message does not exist.
+     */
+    private findMessageOrThrow = async (manager: EntityManager, messageId: UUID): Promise<Message> => {
         const message = await manager.findOneBy(Message, { id: messageId });
         if (!message) throw new EndpointError(404, "Message not found.");
         return message;
     }
 
-    private async updateLastMessage(manager: EntityManager, chatId: UUID, lastMessage?: Message) {
+    /**
+     * Handles updating the last message of a chat
+     */
+    private updateLastMessage = async (manager: EntityManager, chatId: UUID, lastMessage?: Message): Promise<void> => {
         let message: Message | null | undefined = lastMessage;
         
         if (message === undefined) {

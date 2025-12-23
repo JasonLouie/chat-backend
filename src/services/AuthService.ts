@@ -4,30 +4,32 @@ import { Profile } from "../entities/Profile.js";
 import { EndpointError } from "../classes/EndpointError.js";
 import type { ValidationErrors } from "../types/validate.js";
 import type { UUID } from "../types/common.js";
-import { Not, type DataSource, type EntityManager, type FindOptionsSelect, type FindOptionsWhere, type Repository } from "typeorm";
+import { In, Not, type DataSource, type EntityManager, type FindOptionsSelect, type FindOptionsWhere } from "typeorm";
 import type { AuthField } from "../types/auth.js";
 
 export class AuthService {
     private dataSource: DataSource;
-    private userRepo: Repository<User>;
 
     constructor() {
         this.dataSource = AppDataSource;
-        this.userRepo = AppDataSource.getRepository(User);
     }
 
-    // Used by passport strategy
-    async findUserById(id: UUID, transactionManager?: EntityManager) {
-        const manager = transactionManager || this.userRepo.manager;
-        return await manager.findOne(User, {
+    /**
+     * Returns a user's id. Used by the jwt passport strategy when validating a user's access token
+     */
+    public findUserById = async (id: UUID): Promise<User | null> => {
+        return await this.dataSource.manager.findOne(User, {
             where: { id },
-            select: { id: true, username: true, password: true }
-        });
+            select: { id: true }
+        } );
     }
 
-    // Used when showing the user's private account info (email is usually hidden)
-    async getUserFullorThrow(id: UUID) {
-        const user = await this.userRepo.findOne({
+    /**
+     * Returns the user's id, username, and email
+     */
+    public getUserFullorThrow = async (id: UUID, transactionManager?: EntityManager): Promise<User> => {
+        const manager = transactionManager || this.dataSource.manager;
+        const user = await manager.findOne(User, {
             where: { id },
             select: { id: true, username: true, email: true }
         });
@@ -37,12 +39,15 @@ export class AuthService {
         return user;
     }
 
-    async register(username: string, email: string, password: string): Promise<User> {
+    /**
+     * Handles user registration. Ensures unique username and email. Creates a corresponding user profile.
+     */
+    public register = async (username: string, email: string, password: string): Promise<User> => {
         return await this.dataSource.transaction(async (manager) => {
             // Check if users have the username or email
             await this.checkUsernameEmail(manager, username, email);
     
-            const newUser = this.userRepo.create({
+            const newUser = manager.create(User, {
                 username,
                 email,
                 password
@@ -52,14 +57,17 @@ export class AuthService {
             newUser.profile = newProfile;
     
             // Save the user to db. Also saves the attached profile because of cascade: true in entities/User.ts
-            await this.userRepo.save(newUser);
+            await manager.save(newUser);
             return newUser;
         });
     }
 
-    // Used for local passport strategy
-    async login(username: string, password: string): Promise<User | null> {
-        const user = await this.userRepo.findOne({
+    /**
+     * Handles user login. Used in the local passport strategy to handle user authentication.
+     */
+    public login = async (username: string, password: string): Promise<User | null> => {
+        const manager = this.dataSource.manager;
+        const user = await manager.findOne(User, {
             where: { username },
             select: { id: true, username: true, password: true }
         });
@@ -74,7 +82,10 @@ export class AuthService {
         return user;
     }
 
-    async updateUsername(id: UUID, newUsername: string) {
+    /**
+     * Handles updating a user's username
+     */
+    public updateUsername = async (id: UUID, newUsername: string): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             const [user] = await Promise.all([this.findUserOrThrow(id), this.checkUsernameEmail(manager, newUsername, undefined, id)]);
             user.username = newUsername;
@@ -82,18 +93,26 @@ export class AuthService {
         });
     }
 
-    async updatePassword(id: UUID, oldPassword: string, newPassword: string) {
-        const user = await this.findUserOrThrow(id);
-        const isMatch = await user.comparePassword(oldPassword);
+    /**
+     * Handles updating a user's password
+     */
+    public updatePassword = async (id: UUID, oldPassword: string, newPassword: string): Promise<void> => {
+        return await this.dataSource.transaction(async (manager) => {
+            const user = await this.findUserOrThrow(id);
+            const isMatch = await user.comparePassword(oldPassword);
 
-        if (!isMatch) throw new EndpointError(400, { password: ["Incorrect password."] });
-        if (oldPassword === newPassword) throw new EndpointError(400, { password: ["New password cannot be the same as old password."] });
-        
-        user.password = newPassword;
-        this.userRepo.save(user);
+            if (!isMatch) throw new EndpointError(400, { password: ["Incorrect password."] });
+            if (oldPassword === newPassword) throw new EndpointError(400, { password: ["New password cannot be the same as old password."] });
+            
+            user.password = newPassword;
+            await manager.save(user);
+        });
     }
 
-    async updateEmail(id: UUID, newEmail: string, password: string) {
+    /**
+     * Handles updating a user's email
+     */
+    public updateEmail = async (id: UUID, newEmail: string, password: string): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             const [user] = await Promise.all([this.findUserOrThrow(id), this.checkUsernameEmail(manager, undefined, newEmail, id)]);
             const isMatch = await user.comparePassword(password);
@@ -105,15 +124,29 @@ export class AuthService {
         });
     }
 
-    async deleteUser(id: UUID) {
-        await this.userRepo.softDelete({ id });
+    /**
+     * Handles deleting a user
+     */
+    public deleteUser = async (id: UUID, transactionManager?: EntityManager): Promise<void> => {
+        const manager = transactionManager || this.dataSource.manager;
+        await manager.getRepository(User).softDelete({ id });
+    }
+
+    /**
+     * Counts how many valid users are in the array of user ids
+     */
+    public countUsers = async (userIds: UUID[], transactionManager?: EntityManager): Promise<number> => {
+        const manager = transactionManager || this.dataSource.manager;
+        return await manager.count(User, {
+            where: { id: In(userIds) }
+        });
     }
 
     /**
      * Finds a user by id. Returns 404 error if it does not exist.
      */
-    private async findUserOrThrow(id: UUID, transactionManager?: EntityManager) {
-        const manager = transactionManager || this.userRepo.manager;
+    private findUserOrThrow = async (id: UUID, transactionManager?: EntityManager): Promise<User> => {
+        const manager = transactionManager || this.dataSource.manager;
         const user = await manager.findOne(User, {
             where: { id },
             select: { id: true, username: true, email: true, password: true }
@@ -122,13 +155,19 @@ export class AuthService {
         return user;
     }
 
-    private async checkUsernameEmail(manager: EntityManager, username?: string, email?: string, excludeUserId?: UUID) {
+    /**
+     * Finds users with that username and/or email
+     */
+    private checkUsernameEmail = async (manager: EntityManager, username?: string, email?: string, excludeUserId?: UUID): Promise<void> => {
         const where: FindOptionsWhere<User>[] = [];
         
+        // Handles adding email or username related options for where
         const addCondition = (condition: AuthField) => {
             if (excludeUserId) {
+                // Updating email/username
                 where.push({ ...condition, id: Not(excludeUserId) })
             } else {
+                // Handles registration
                 where.push(condition);
             }
         }
