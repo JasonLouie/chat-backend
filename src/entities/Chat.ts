@@ -32,7 +32,7 @@ export class Chat {
 
     @OneToOne(() => Message, { nullable: true })
     @JoinColumn({ name: "last_message_id" })
-    lastMessage!: Message;
+    lastMessage!: Message | null;
 
     numParticipants?: number;
 }

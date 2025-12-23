@@ -2,6 +2,7 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    Index,
     JoinColumn,
     ManyToOne,
     PrimaryGeneratedColumn,
@@ -12,6 +13,7 @@ import { User } from "./User.js";
 import type { UUID } from "../types/common.js";
 
 @Entity({ name: "messages" })
+@Index(["chatId", "createdAt"])
 export class Message {
     @PrimaryGeneratedColumn("uuid")
     id!: UUID;
@@ -28,8 +30,14 @@ export class Message {
     @Column({ type: "text" })
     content!: string;
 
+    @Column( { default: false } )
+    pinned!: boolean;
+
     @CreateDateColumn()
     createdAt!: Date;
+
+    @Column({ nullable: true })
+    editedAt!: Date | null;
 
     @ManyToOne(() => Chat, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })

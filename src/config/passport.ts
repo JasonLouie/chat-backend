@@ -7,7 +7,7 @@ import { AuthService } from "../services/AuthService.js";
 const authService = new AuthService;
 
 // Local strategy for logging in
-passport.use(new LocalStrategy(async (username, password, done) => {
+passport.use(new LocalStrategy({ session: false }, async (username, password, done) => {
     try {
         const user = await authService.login(username, password);
         if (!user) return done(null, false, { message: "Invalid credentials" });

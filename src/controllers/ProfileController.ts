@@ -3,7 +3,11 @@ import { ProfileService } from "../services/ProfileService.js";
 import type { User } from "../entities/User.js";
 
 export class ProfileController {
-    private profileService = new ProfileService;
+    private profileService: ProfileService;
+
+    constructor(profileService: ProfileService) {
+        this.profileService = profileService;
+    }
 
     /**
      * GET /api/profile/me

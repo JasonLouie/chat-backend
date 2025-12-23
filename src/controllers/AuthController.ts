@@ -32,9 +32,15 @@ function clearCookies(res: Response) {
 }
 
 export class AuthController {
-    private authService = new AuthService;
-    private profileService = new ProfileService;
-    private tokenService = new TokenService;
+    private authService: AuthService;
+    private profileService: ProfileService;
+    private tokenService: TokenService;
+
+    constructor(authService: AuthService, profileService: ProfileService, tokenService: TokenService) {
+        this.authService = authService;
+        this.profileService = profileService;
+        this.tokenService = tokenService;
+    }
 
     /**
      * POST /api/auth/register

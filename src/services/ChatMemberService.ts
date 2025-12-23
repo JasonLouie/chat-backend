@@ -1,13 +1,20 @@
-import { Not, TreeLevelColumn, type EntityManager } from "typeorm";
+import { Not, type EntityManager } from "typeorm";
 import { EndpointError } from "../classes/EndpointError.js";
 import { AppDataSource } from "../db/data-source.js";
-import { Chat } from "../entities/Chat.js";
 import { ChatMember } from "../entities/ChatMember.js";
 import type { UUID } from "../types/common.js";
 import { ChatRole, ChatType } from "../enums.js";
+import type { ChatService } from "./ChatService.js";
+import type { DataSource } from "typeorm/browser";
 
 export class ChatMemberService {
-    private dataSource = AppDataSource;
+    private chatService: ChatService
+    private dataSource: DataSource;
+
+    constructor(chatService: ChatService) {
+        this.dataSource = AppDataSource;
+        this.chatService = chatService;
+    }
 
     /**
      * Handles leaving chats (DMs and Groups)
@@ -35,7 +42,7 @@ export class ChatMemberService {
     async addMember(chatId: UUID, initiatingUserId: UUID, newMemberId: UUID) {
         return await this.dataSource.transaction(async (manager) => {
             // Check if the chat is a group
-            const chat = await this.getChatOrThrow(manager, chatId);
+            const chat = await this.chatService.getChatOrThrow(manager, chatId);
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot add members to a private chat.");
 
             // Check if the initiating user is in the group
@@ -70,7 +77,7 @@ export class ChatMemberService {
     async removeMember(chatId: UUID, initiatingUserId: UUID, memberId: UUID) {
         return await this.dataSource.transaction(async (manager) => {
             // Check if the chat is a group
-            const chat = await this.getChatOrThrow(manager, chatId);
+            const chat = await this.chatService.getChatOrThrow(manager, chatId);
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
@@ -98,7 +105,7 @@ export class ChatMemberService {
     async switchOwnership(chatId: UUID, initiatingUserId: UUID, newOwnerId: UUID) {
         return await this.dataSource.transaction(async (manager) => {
             // Check if the chat is a group
-            const chat = await this.getChatOrThrow(manager, chatId);
+            const chat = await this.chatService.getChatOrThrow(manager, chatId);
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
@@ -123,19 +130,15 @@ export class ChatMemberService {
         });
     }
 
-    // Private helper methods
-
-    /**
-     * Gets the chat by id. Throws an error if the chat does not exist.
-     */
-    private async getChatOrThrow(manager: EntityManager, id: UUID) {
-        const chat = await manager.findOne(Chat, {
-            where: { id },
-            select: { id: true, type: true }
+    async validateChatMembership(manager: EntityManager, chatId: UUID, userId: UUID) {
+        const member = await manager.findOne(ChatMember, {
+            where: { chatId, userId },
+            select: ["chatId"]
         });
-        if (!chat) throw new EndpointError(404, "Chat does not exist.");
-        return chat;
+        if (!member) throw new EndpointError(403, "You are not a member of this chat.");
     }
+
+    // Private helper methods
 
     /**
      * Check if the member exists. Optionally include members that were deleted
@@ -180,7 +183,7 @@ export class ChatMemberService {
         const remainingCount = await this.countMembers(manager, member.chatId, member.userId);
         
         if (remainingCount === 0) {
-            await manager.remove(Chat, member.chat);
+            await this.chatService.softDeleteChat(manager, member.chat);
             return; // Chat is removed and related data is deleted via cascade
         }
 
@@ -200,6 +203,7 @@ export class ChatMemberService {
                 chatId,
                 userId: Not(currentOwnerId)
             },
+            order: { joinedAt: "ASC" }
         });
 
         if (seniorMember) {
