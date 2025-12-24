@@ -54,7 +54,7 @@ export class AuthController {
                 this.profileService.getProfile(user.id)
             ]);
             sendCookies(tokens, res);
-            res.json(fullProfile);
+            res.status(201).json(fullProfile);
         } catch (err) {
             next(err);
         }
@@ -65,10 +65,10 @@ export class AuthController {
      */
     public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const user = req.user as User;
+            const { id } = req.user as User;
             const [tokens, fullProfile] = await Promise.all([
-                this.tokenService.generateTokens(user.id),
-                this.profileService.getProfile(user.id)
+                this.tokenService.generateTokens(id),
+                this.profileService.getProfile(id)
             ]);
             sendCookies(tokens, res);
             res.json(fullProfile);

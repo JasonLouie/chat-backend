@@ -11,7 +11,7 @@ export const configurePassport = (authService: AuthService) => {
             { session: false },
             async (username, password, done) => {
                 try {
-                    const user = await authService.login(username, password);
+                    const user = await authService.validateUser(username, password);
                     if (!user) {
                         return done(null, false, {
                             message: "Invalid credentials",

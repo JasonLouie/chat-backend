@@ -24,7 +24,7 @@ export class Message {
     @Column("uuid")
     senderId!: UUID;
 
-    @Column({ type: "enum", enum: MessageType, default: MessageType.TEXT })
+    @Column({ type: "enum", enum: MessageType })
     type!: MessageType;
 
     @Column({ type: "text" })

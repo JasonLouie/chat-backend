@@ -64,7 +64,7 @@ export class MessageService {
     /**
      * Handles sending messages
      */
-    public sendMessage = async (chatId: UUID, senderId: UUID, content: string, type?: MessageType): Promise<Message> => {
+    public sendMessage = async (chatId: UUID, senderId: UUID, content: string, type: MessageType): Promise<Message> => {
         return await this.dataSource.transaction(async (manager) => {
             const { chat } = await this.chatMemberService.validateChatMembership(manager, chatId, senderId, true);
 
@@ -81,7 +81,7 @@ export class MessageService {
                 chatId,
                 senderId,
                 content,
-                ...(type !== undefined && { type })
+                type
             });
 
             await this.updateLastMessage(manager, chatId, newMessage);

@@ -65,7 +65,7 @@ export class AuthService {
     /**
      * Handles user login. Used in the local passport strategy to handle user authentication.
      */
-    public login = async (username: string, password: string): Promise<User | null> => {
+    public validateUser = async (username: string, password: string): Promise<User | null> => {
         const manager = this.dataSource.manager;
         const user = await manager.findOne(User, {
             where: { username },
