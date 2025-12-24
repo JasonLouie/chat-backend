@@ -30,3 +30,10 @@ export enum Status {
     Conflict = 409,
     Server_Error = 500
 }
+
+export enum ParamType {
+    PROFILE = "profile",
+    CHAT = "chat",
+    MEMBER = "member",
+    MESSAGE = "msg"
+}

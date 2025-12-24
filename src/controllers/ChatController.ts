@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { ChatService } from "../services/ChatService.js";
 import type { User } from "../entities/User.js";
-import { EndpointError } from "../classes/EndpointError.js";
+import { ParamType } from "../enums.js";
+import { handleParams } from "../utils/utils.js";
 
 export class ChatController {
     private chatService: ChatService;
@@ -11,7 +12,7 @@ export class ChatController {
     }
 
     /**
-     * Returns all chats belonging to a user
+     * GET /api/chats
      */
     public getUserChats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -23,6 +24,9 @@ export class ChatController {
         }
     }
 
+    /**
+     * POST /api/chats
+     */
     public createChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.user as User;
@@ -35,10 +39,12 @@ export class ChatController {
         }
     }
 
+    /**
+     * PATCH /api/chats/:chatId
+     */
     public modifyChatGroup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId } = req.params;
-            if (!chatId) throw new EndpointError(400, "Chat ID is required.");
+            const { chatId } = handleParams(req.params, ParamType.CHAT);
             const { id } = req.user as User;
             const { name, imageUrl } = req.body;
 

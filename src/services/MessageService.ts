@@ -18,19 +18,6 @@ export class MessageService {
     }
 
     /**
-     * Toggle pinning a message. Allow users to toggle pinning messages regardless of the sender.
-     */
-    public toggleMessagePinned = async (messageId: UUID, chatId: UUID, userId: UUID): Promise<void> => {
-        return await this.dataSource.transaction(async (manager) => {
-            await this.chatMemberService.validateChatMembership(manager, chatId, userId);
-
-            const message = await this.findMessageOrThrow(manager, messageId);
-            message.pinned = !message.pinned;
-            await manager.save(Message, message);
-        });
-    }
-
-    /**
      * Search for messages
      */
     public searchMessages = async (chatId: UUID, userId: UUID, keyword?: string, type?: MessageType, beforeDate?: Date, afterDate?: Date, pinned?: boolean): Promise<Message[]> => {
@@ -75,7 +62,7 @@ export class MessageService {
     }
 
     /**
-     * Handles sending messages in a chat group
+     * Handles sending messages
      */
     public sendMessage = async (chatId: UUID, senderId: UUID, content: string, type?: MessageType): Promise<Message> => {
         return await this.dataSource.transaction(async (manager) => {
@@ -123,6 +110,19 @@ export class MessageService {
     }
 
     /**
+     * Toggle pinning a message. Allow users to toggle pinning messages regardless of the sender.
+     */
+    public pinMessage = async (messageId: UUID, chatId: UUID, userId: UUID, newPinState: boolean): Promise<void> => {
+        return await this.dataSource.transaction(async (manager) => {
+            await this.chatMemberService.validateChatMembership(manager, chatId, userId);
+
+            const message = await this.findMessageOrThrow(manager, messageId);
+            message.pinned = newPinState;
+            await manager.save(Message, message);
+        });
+    }
+
+    /**
      * Handles deleting a message
      */
     public deleteMessage = async (messageId: UUID, chatId: UUID, userId: UUID): Promise<void> => {
@@ -135,7 +135,10 @@ export class MessageService {
             });
             if (!chat) throw new EndpointError(404, "Chat not found.");
 
-            const message = await this.findMessageOrThrow(manager, messageId);
+            const message = await manager.findOneBy(Message, { id: messageId });
+            
+            // If message is null, it was already deleted
+            if (!message) return;
 
             if (userId !== message.senderId) throw new EndpointError(403, "Cannot delete messages that do not belong to you.");
 

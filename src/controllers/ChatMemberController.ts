@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { ChatMemberService } from "../services/ChatMemberService.js";
-import type { ChatParams } from "../types/common.js";
 import { EndpointError } from "../classes/EndpointError.js";
 import type { User } from "../entities/User.js";
+import { ChatRole, ParamType } from "../enums.js";
+import { handleParams } from "../utils/utils.js";
 
 export class ChatMemberController {
     private chatMemberService: ChatMemberService;
@@ -16,7 +17,7 @@ export class ChatMemberController {
      */
     public deleteMember = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId, memberId } = this.handleParams(req.params);
+            const { chatId, memberId } = handleParams(req.params, ParamType.MEMBER);
             const { id } = req.user as User;
 
             if (memberId === id) {
@@ -35,9 +36,10 @@ export class ChatMemberController {
      */
     public addMember = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId, memberId } = this.handleParams(req.params);
+            const { chatId, memberId } = handleParams(req.params, ParamType.MEMBER);
             const { id } = req.user as User;
-            
+            const member = await this.chatMemberService.addMember(chatId, id, memberId);
+            res.status(201).json(member);
         } catch (err) {
             next(err);
         }
@@ -46,23 +48,20 @@ export class ChatMemberController {
     /**
      * PATCH /api/chats/:chatId/:memberId
      */
-    public transferOwnership = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public updateMember = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId, memberId } = this.handleParams(req.params);
+            const { chatId, memberId } = handleParams(req.params, ParamType.MEMBER);
             const { id } = req.user as User;
+            const { role } = req.body;
+
+            if (role === ChatRole.OWNER) {
+                await this.chatMemberService.transferOwnership(chatId, id, memberId);
+                res.sendStatus(204);
+            }
             
+            throw new EndpointError(400, "Invalid role update.");
         } catch (err) {
             next(err);
         }
-    }
-
-    /**
-     * Ensures that chatId and memberId are provided
-     */
-    private handleParams = (params: ChatParams) => {
-        const { chatId, memberId } = params;
-        if (!chatId) throw new EndpointError(400, "Chat ID is required.");
-        if (!memberId) throw new EndpointError(400, "Member ID is required.");
-        return { chatId, memberId };
     }
 }
