@@ -45,7 +45,7 @@ export class AuthController {
     /**
      * POST /api/auth/register
      */
-    async register(req: Request, res: Response, next: NextFunction) {
+    public register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { username, email, password } = req.body;
             const user = await this.authService.register(username, email, password);
@@ -63,7 +63,7 @@ export class AuthController {
     /**
      * POST /api/auth/login
      */
-    async login(req: Request, res: Response, next: NextFunction) {
+    public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = req.user as User;
             const [tokens, fullProfile] = await Promise.all([
@@ -80,7 +80,7 @@ export class AuthController {
     /**
      * POST /api/auth/logout
      */
-    async logout(req: Request, res: Response, next: NextFunction) {
+    public logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             await this.tokenService.removeToken(req.cookies);
             clearCookies(res);
@@ -93,7 +93,7 @@ export class AuthController {
     /**
      * POST /api/auth/refresh
      */
-    async refreshTokens(req: Request, res: Response, next: NextFunction) {
+    public refreshTokens = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const tokens = await this.tokenService.refresh(req.cookies);
             sendCookies(tokens, res);
@@ -106,7 +106,7 @@ export class AuthController {
     /**
      * PUT /api/auth/username
      */
-    async updateUsername(req: Request, res: Response, next: NextFunction) {
+    public updateUsername = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = req.user as User;
             const { newUsername } = req.body;
@@ -120,7 +120,7 @@ export class AuthController {
     /**
      * PUT /api/auth/password
      */
-    async updatePassword(req: Request, res: Response, next: NextFunction) {
+    public updatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = req.user as User;
             const { oldPassword, newPassword } = req.body;
@@ -134,7 +134,7 @@ export class AuthController {
     /**
      * PUT /api/auth/email
      */
-    async updateEmail(req: Request, res: Response, next: NextFunction) {
+    public updateEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = req.user as User;
             const { newEmail, password } = req.body;
@@ -148,7 +148,7 @@ export class AuthController {
     /**
      * DELETE /api/auth/delete
      */
-    async deleteUser(req: Request, res: Response, next: NextFunction) {
+    public deleteUser = async (req: Request, res: Response, next: NextFunction) : Promise<void> => {
         try {
             const user = req.user as User;
             await this.authService.deleteUser(user.id);

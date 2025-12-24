@@ -1,6 +1,7 @@
 import type { Response, Request, NextFunction } from "express";
 import { ProfileService } from "../services/ProfileService.js";
 import type { User } from "../entities/User.js";
+import { EndpointError } from "../classes/EndpointError.js";
 
 export class ProfileController {
     private profileService: ProfileService;
@@ -12,7 +13,7 @@ export class ProfileController {
     /**
      * GET /api/profile/me
      */
-    public getMyProfile = async(req: Request, res: Response, next: NextFunction) => {
+    public getMyProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.user as User;
             const profile = await this.profileService.getProfile(id);
@@ -25,10 +26,11 @@ export class ProfileController {
     /**
      * GET /api/profile/:id
      */
-    public getUserProfile = async(req: Request, res: Response, next: NextFunction) => {
+    public getUserProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.params;
-            const profile = await this.profileService.getProfile(id!);
+            const { userId } = req.params;
+            if (!userId) throw new EndpointError(400, "User ID is required.");
+            const profile = await this.profileService.getProfile(userId);
             res.json(profile);
         } catch (err) {
             next(err);
@@ -38,7 +40,7 @@ export class ProfileController {
     /**
      * PATCH /api/profile/me - Modify imageUrl or bio
      */
-    public modifyProfile = async(req: Request, res: Response, next: NextFunction) => {
+    public modifyProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { id } = req.user as User;
             const { newImg, newBio } = req.body;
