@@ -1,5 +1,15 @@
 import { Router } from "express";
+import type { ProfileController } from "../controllers/ProfileController.js";
+import { validateModifyProfile } from "../middleware/validators.js";
 
-const router = Router();
+export function createProfileRoutes(profileController: ProfileController) {
+    const router = Router();
 
-export default router;
+    router.patch("/", validateModifyProfile, profileController.modifyProfile);
+
+    router.get("/me", profileController.getMyProfile);
+
+    router.get("/:userId", profileController.getUserProfile);
+
+    return router;
+}

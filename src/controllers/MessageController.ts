@@ -12,7 +12,7 @@ export class MessageController{
     }
 
     /**
-     * GET /api/chats/:chatId/messages/:messageId
+     * POST /api/chats/:chatId/messages/search
      */
     public searchMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -57,7 +57,7 @@ export class MessageController{
     }
 
     /**
-     * PATCH /api/chats/:chatId/messages/:messageId
+     * PATCH /api/chats/:chatId/messages/:messageId/pin
      */
     public pinMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {

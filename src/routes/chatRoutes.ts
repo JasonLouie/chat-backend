@@ -1,5 +1,21 @@
 import { Router } from "express";
+import type { ChatController } from "../controllers/ChatController.js";
+import type { ChatMemberController } from "../controllers/ChatMemberController.js";
+import type { MessageController } from "../controllers/MessageController.js";
 
-const router = Router();
+export function createChatRoutes(chatController: ChatController, chatMemberController: ChatMemberController, messageController: MessageController) {
+    const router = Router();
 
-export default router;
+    router.route("/")
+        .get(chatController.getUserChats)
+        .post(chatController.createChat)
+
+    router.route("/:chatId")
+        .get()
+        .patch(chatController.modifyChatGroup);
+
+    router.use("/:chatId/members", );
+    router.use("/:chatId/messages", );
+
+    return router;
+}

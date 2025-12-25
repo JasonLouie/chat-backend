@@ -25,6 +25,18 @@ export class ChatController {
     }
 
     /**
+     * GET /api/chats/:chatId
+     */
+    public getChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const { chatId } = handleParams(req.params, ParamType.CHAT);
+            
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
      * POST /api/chats
      */
     public createChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

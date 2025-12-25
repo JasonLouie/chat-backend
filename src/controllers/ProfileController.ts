@@ -25,7 +25,7 @@ export class ProfileController {
     }
 
     /**
-     * GET /api/profile/:id
+     * GET /api/profile/:userId
      */
     public getUserProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -38,7 +38,7 @@ export class ProfileController {
     }
 
     /**
-     * PATCH /api/profile/me - Modify imageUrl or bio
+     * PATCH /api/profile - Modify imageUrl or bio
      */
     public modifyProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {

@@ -146,7 +146,7 @@ export class AuthController {
     }
 
     /**
-     * DELETE /api/auth/delete
+     * DELETE /api/auth
      */
     public deleteUser = async (req: Request, res: Response, next: NextFunction) : Promise<void> => {
         try {

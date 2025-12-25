@@ -123,7 +123,9 @@ describe("AuthController", () => {
             await authController.logout(req, res, next);
 
             expect(mockTokenService.removeToken).toHaveBeenCalledWith(
-                "refresh_token"
+                {
+                    refreshToken: "refresh_token"
+                }
             );
 
             expect(res.statusCode).toBe(204);
