@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "../entities/User.js";
-import { Profile } from "../entities/Profile.js";
-import { Message } from "../entities/Message.js";
-import { Chat } from "../entities/Chat.js";
-import { ChatMember } from "../entities/ChatMember.js";
-import { RefreshToken } from "../entities/RefreshToken.js";
+import { User } from "../modules/users/user.entity.js";
+import { Profile } from "../modules/users/profiles/profile.entity.js";
+import { Message } from "../modules/chats/messages/message.entity.js";
+import { Chat } from "../modules/chats/chat.entity.js";
+import { ChatMember } from "../modules/chats/members/chat-member.entity.js";
+import { RefreshToken } from "../modules/auth/tokens/refresh-token.entity.js";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
 export const AppDataSource = new DataSource({

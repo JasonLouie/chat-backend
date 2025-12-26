@@ -4,8 +4,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { AppDataSource } from "./db/data-source.js";
-import { handleServerErrors } from "./middleware/errorHandler.js";
-import { logRequest } from "./middleware/requestLogger.js";
+import { handleServerErrors } from "./common/middleware/errorHandler.js";
+import { logRequest } from "./common/middleware/requestLogger.js";
 
 const app = express();
 const port = process.env.PORT || 3000;

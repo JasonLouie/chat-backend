@@ -1,23 +1,24 @@
 import { Router } from "express";
 import type { Container } from "../container.js";
-import { createAuthRoutes } from "./authRoutes.js";
-import { protect } from "../middleware/auth.js";
-import { createProfileRoutes } from "./profileRoutes.js";
+import { createAuthRoutes } from "../modules/auth/auth.routes.js";
+import { protect } from "../common/middleware/auth.js";
+import { createUserRoutes } from "../modules/users/user.routes.js";
+import { createChatRoutes } from "../modules/chats/chat.routes.js";
 
 export function createRoutes(container: Container) {
     const router = Router();
 
-    const { authController, chatController, chatMemberController, messageController, profileController } = container;
+    const { authController, userController, profileController, chatController, chatMemberController, messageController } = container;
 
     // Mount Routes
 
     // Auth
     router.use("/auth", createAuthRoutes(authController));
 
-    // Profile
-    router.use("/profiles", protect, createProfileRoutes(profileController));
+    // User
+    router.use("/users", protect, createUserRoutes(userController, profileController));
 
     // Chat, Messages, and Members
-    router.use("/chat", protect, );
+    router.use("/chats", protect, createChatRoutes(chatController, chatMemberController, messageController));
     return router;
 }
