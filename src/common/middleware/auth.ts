@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import type { User } from "../../modules/users/user.entity.js";
-import { EndpointError } from "../../classes/EndpointError.js";
+import { EndpointError } from "../errors/EndpointError.js";
 import type { AuthInfo } from "../../modules/auth/auth.types.js";
 
 export function authenticateUser(req: Request, res: Response, next: NextFunction) {

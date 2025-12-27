@@ -1,7 +1,6 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { ChatService } from "./chat.service.js";
-import type { User } from "../users/user.entity.js";
-import { ParamType } from "../../enums.js";
+import type { ProtectedRequest } from "../../common/types/express.types.js";
 
 export class ChatController {
     private chatService: ChatService;
@@ -13,10 +12,10 @@ export class ChatController {
     /**
      * GET /api/chats
      */
-    public getUserChats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public getUserChats = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.user as User;
-            const chats = await this.chatService.getUserChats(id);
+            const userId = req.user.id;
+            const chats = await this.chatService.getUserChats(userId);
             res.status(201).json(chats);
         } catch (err) {
             next(err);
@@ -26,12 +25,12 @@ export class ChatController {
     /**
      * POST /api/chats
      */
-    public createChat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public createChat = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.user as User;
+            const userId = req.user.id;
             const { memberIds, name, imageUrl } = req.body;
 
-            const chat = await this.chatService.createChat(id, memberIds, name, imageUrl);
+            const chat = await this.chatService.createChat(userId, memberIds, name, imageUrl);
             res.status(201).json(chat);
         } catch (err) {
             next(err);
@@ -41,13 +40,13 @@ export class ChatController {
     /**
      * PATCH /api/chats/:chatId
      */
-    public modifyChatGroup = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public modifyChatGroup = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId } = req.params;
-            const { id } = req.user as User;
+            const userId = req.user.id;
             const { name, imageUrl } = req.body;
 
-            await this.chatService.modifyChatGroup(chatId, id, name, imageUrl);
+            await this.chatService.modifyChatGroup(chatId, userId, name, imageUrl);
             res.sendStatus(204);
         } catch (err) {
             next(err);

@@ -1,5 +1,5 @@
-import type { UserStatus } from "../../../enums.js";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
+import type { UserStatus } from "../user.types.js";
 
 export interface ProfileResponse {
     id: UUID;
@@ -10,7 +10,7 @@ export interface ProfileResponse {
     bio: string | null;
 }
 
-export interface UpdateProfileParams {
-    bio?: string;
-    imageUrl?: string;
+export interface ModifyProfileBody {
+    newBio?: string;
+    newImageUrl?: string;
 }

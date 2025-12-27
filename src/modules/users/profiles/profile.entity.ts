@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
 import { User } from "../user.entity.js";
-import { UserStatus } from "../../../enums.js";
-import type { UUID } from "../../../types/common.js";
+import { UserStatus } from "../user.types.js";
+import type { UUID } from "../../../common/types/common.js";
 
 @Entity({ name: "profiles" })
 export class Profile {

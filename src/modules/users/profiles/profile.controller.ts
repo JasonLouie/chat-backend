@@ -1,7 +1,8 @@
-import type { Response, Request, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { ProfileService } from "./profile.service.js";
-import type { User } from "../user.entity.js";
 import type { UserParams } from "../../../common/params/params.types.js";
+import type { ProtectedRequest } from "../../../common/types/express.types.js";
+import type { ModifyProfileBody } from "./profile.types.js";
 
 export class ProfileController {
     private profileService: ProfileService;
@@ -13,10 +14,10 @@ export class ProfileController {
     /**
      * GET /api/profile/me
      */
-    public getMyProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public getMyProfile = async(req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.user as User;
-            const profile = await this.profileService.getProfile(id);
+            const userId = req.user.id;
+            const profile = await this.profileService.getProfile(userId);
             res.json(profile);
         } catch (err) {
             next(err);
@@ -26,7 +27,7 @@ export class ProfileController {
     /**
      * GET /api/profile/:userId
      */
-    public getUserProfile = async(req: Request<UserParams>, res: Response, next: NextFunction): Promise<void> => {
+    public getUserProfile = async(req: ProtectedRequest<UserParams>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { userId } = req.params;
             const profile = await this.profileService.getProfile(userId);
@@ -39,11 +40,11 @@ export class ProfileController {
     /**
      * PATCH /api/profile - Modify imageUrl or bio
      */
-    public modifyProfile = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public modifyProfile = async(req: ProtectedRequest<any, any, ModifyProfileBody>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.user as User;
-            const { newImg, newBio } = req.body;
-            await this.profileService.modifyProfile(id, newImg, newBio);
+            const userId = req.user.id;
+            const { newBio, newImageUrl } = req.body;
+            await this.profileService.modifyProfile(userId, newBio, newImageUrl);
             res.sendStatus(204);
         } catch (err) {
             next(err);

@@ -2,7 +2,7 @@ import type { Response, NextFunction } from "express";
 import { MessageService } from "./message.service.js";
 import type { ChatParams, MessageParams } from "../../../common/params/params.types.js";
 import type { GetChatMessagesQuery, SearchMessageQuery } from "./message.types.js";
-import type { ProtectedRequest } from "../../../types/express.types.js";
+import type { ProtectedRequest } from "../../../common/types/express.types.js";
 
 export class MessageController{
     private messageService: MessageService;

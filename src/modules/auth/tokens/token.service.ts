@@ -1,9 +1,9 @@
 import { AppDataSource } from "../../../db/data-source.js";
 import jwt, { type SignOptions } from "jsonwebtoken";
 import { RefreshToken } from "./refresh-token.entity.js";
-import { EndpointError } from "../../../classes/EndpointError.js";
+import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { randomBytes } from "crypto";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
 import type { Token, Tokens } from "./token.types.js";
 
 export class TokenService {

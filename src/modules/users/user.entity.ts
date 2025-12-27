@@ -3,7 +3,7 @@ import { Profile } from "./profiles/profile.entity.js";
 import { ChatMember } from "../chats/members/chat-member.entity.js";
 import { Message } from "../chats/messages/message.entity.js";
 import { RefreshToken } from "../auth/tokens/refresh-token.entity.js";
-import type { UUID } from "../../types/common.js";
+import type { UUID } from "../../common/types/common.js";
 import bcrypt from "bcryptjs";
 
 @Entity({ name: "users" })

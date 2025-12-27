@@ -1,9 +1,9 @@
 import { In, Not, type DataSource, type EntityManager, type FindOptionsSelect, type FindOptionsWhere } from "typeorm";
 import { AppDataSource } from "../../db/data-source.js";
-import type { UUID } from "../../types/common.js";
-import { EndpointError } from "../../classes/EndpointError.js";
+import type { UUID } from "../../common/types/common.js";
+import { EndpointError } from "../../common/errors/EndpointError.js";
 import { User } from "./user.entity.js";
-import type { ValidationErrors } from "../../types/validate.js";
+import type { FormattedErrors } from "../../common/types/validate.js";
 
 export class UserService {
     private dataSource: DataSource;
@@ -145,7 +145,7 @@ export class UserService {
         const existingUsers = await manager.find(User, { where, select });
 
         if (existingUsers.length > 0) {
-            const errors: ValidationErrors = {};
+            const errors: FormattedErrors = {};
 
             const emailTaken = existingUsers.some((u) => u.email === email);
             if (emailTaken) errors.email = ["Email is already in use."];

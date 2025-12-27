@@ -1,7 +1,7 @@
 import { AppDataSource } from "../../db/data-source.js";
 import { User } from "../users/user.entity.js";
 import { Profile } from "../users/profiles/profile.entity.js";
-import type { UUID } from "../../types/common.js";
+import type { UUID } from "../../common/types/common.js";
 import { type DataSource } from "typeorm";
 import { UserService } from "../users/user.service.js";
 

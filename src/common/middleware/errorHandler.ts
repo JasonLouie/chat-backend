@@ -1,4 +1,4 @@
-import { EndpointError } from "../../classes/EndpointError.js";
+import { EndpointError } from "../errors/EndpointError.js";
 import type { Request, Response, NextFunction } from "express";
 
 interface Errors {

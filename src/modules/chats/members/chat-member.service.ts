@@ -1,9 +1,9 @@
 import { Not, type EntityManager } from "typeorm";
-import { EndpointError } from "../../../classes/EndpointError.js";
+import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { AppDataSource } from "../../../db/data-source.js";
 import { ChatMember } from "./chat-member.entity.js";
-import type { UUID } from "../../../types/common.js";
-import { ChatRole, ChatType } from "../../../enums.js";
+import type { UUID } from "../../../common/types/common.js";
+import { ChatRole, ChatType } from "../chat.types.js";
 import type { DataSource } from "typeorm/browser";
 
 export class ChatMemberService {

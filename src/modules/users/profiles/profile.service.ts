@@ -1,7 +1,7 @@
-import { EndpointError } from "../../../classes/EndpointError.js";
+import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { AppDataSource } from "../../../db/data-source.js";
 import { Profile } from "./profile.entity.js";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
 import type { ProfileResponse } from "./profile.types.js";
 
 export class ProfileService {
@@ -43,11 +43,16 @@ export class ProfileService {
     /**
      * PATCH /api/profile/me - Modify imageUrl or bio
      */
-    public modifyProfile = async (userId: UUID, newImg?: string, newBio?: string): Promise<void> => {
-        const updates = {
-            ...(newImg !== undefined && { imageUrl: newImg }),
-            ...(newBio !== undefined && { bio: newBio })
-        };
+    public modifyProfile = async (userId: UUID, newBio?: string, newImageUrl?: string): Promise<void> => {
+        const updates: Partial<Profile> = {};
+
+        if (newBio) {
+            updates.bio = newBio;
+        }
+
+        if (newImageUrl) {
+            updates.imageUrl = newImageUrl;
+        }
 
         // Do not run DB query if there are no updates
         if (Object.keys(updates).length === 0) return;

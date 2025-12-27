@@ -7,10 +7,10 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
 } from "typeorm";
-import { MessageType } from "../../../enums.js";
+import { MessageType } from "./message.types.js";
 import { Chat } from "../chat.entity.js";
 import { User } from "../../users/user.entity.js";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
 
 @Entity({ name: "messages" })
 @Index(["chatId", "createdAt"])

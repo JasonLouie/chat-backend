@@ -1,4 +1,4 @@
-import type { UUID } from "../../types/common.js";
+import type { UUID } from "../../common/types/common.js";
 
 export interface UserParams {
     userId: UUID;

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { MessageController } from "./message.controller.js";
-import { handle } from "../../../utils/route.utils.js";
+import { handle } from "../../../common/utils/route.utils.js";
 
 export function createMessageRoutes(messageController: MessageController) {
     const router = Router({ mergeParams: true });

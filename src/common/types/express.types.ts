@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { User } from "../modules/users/user.entity.js";
+import { User } from "../../modules/users/user.entity.js";
 
 export interface ProtectedRequest<
     P = any,

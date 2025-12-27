@@ -1,4 +1,9 @@
-import type { MessageType } from "../../../enums.js";
+export enum MessageType {
+    TEXT = "text",
+    IMAGE = "image",
+    VOICE = "voice",
+    SYSTEM = "system"
+}
 
 export interface GetChatMessagesQuery {
     cursor?: Date | undefined;

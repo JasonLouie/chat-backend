@@ -1,8 +1,8 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
-import { ChatRole } from "../../../enums.js";
+import { ChatRole } from "../chat.types.js";
 import { Chat } from "../chat.entity.js";
 import { User } from "../../users/user.entity.js";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
 
 @Entity({ name: "chat_members"})
 export class ChatMember {

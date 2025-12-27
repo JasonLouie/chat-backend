@@ -1,6 +1,19 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
+import type { FormattedErrors } from '../types/validate.js';
+import { EndpointError } from '../errors/EndpointError.js';
+
+const formatErrors = (errors: ValidationError[]): FormattedErrors => {
+    const formatted: FormattedErrors = {};
+
+    errors.forEach(err => {
+        if (err.constraints) {
+            formatted[err.property] = Object.values(err.constraints);
+        }
+    });
+    return formatted;
+}
 
 /**
  * @param type - The DTO class to validate against
@@ -24,7 +37,7 @@ export function validationMiddleware<T>(
             const message = errors.map((error: ValidationError) =>
                 Object.values(error.constraints || {})
             ).join(", ");
-            res.status(400).json({ error: message});
+            res.status(400).json(new EndpointError(400, formatErrors(errors)));
             return;
         }
 

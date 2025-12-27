@@ -3,7 +3,7 @@ import { AuthService } from "./auth.service.js";
 import { TokenService } from "./tokens/token.service.js";
 import { ProfileService } from "../users/profiles/profile.service.js";
 import type { User } from "../users/user.entity.js";
-import { clearAuthCookies, sendAuthCookies } from "../../utils/cookie.utils.js";
+import { clearAuthCookies, sendAuthCookies } from "../../common/utils/cookie.utils.js";
 
 export class AuthController {
     private authService: AuthService;

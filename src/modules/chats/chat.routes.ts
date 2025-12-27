@@ -4,15 +4,16 @@ import { ChatMemberController } from "./members/chat-member.controller.js";
 import { MessageController } from "./messages/message.controller.js";
 import { createChatMemberRoutes } from "./members/chat-member.routes.js";
 import { createMessageRoutes } from "./messages/message.routes.js";
+import { handle } from "../../common/utils/route.utils.js";
 
 export function createChatRoutes(chatController: ChatController, chatMemberController: ChatMemberController, messageController: MessageController) {
     const router = Router();
 
     router.route("/")
-        .get(chatController.getUserChats)
-        .post(chatController.createChat)
+        .get(handle(chatController.getUserChats))
+        .post(handle(chatController.createChat));
 
-    router.patch("/:chatId", chatController.modifyChatGroup);
+    router.patch("/:chatId", handle(chatController.modifyChatGroup));
 
     router.use("/:chatId/members", createChatMemberRoutes(chatMemberController));
     router.use("/:chatId/messages", createMessageRoutes(messageController));

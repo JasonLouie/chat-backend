@@ -1,12 +1,12 @@
-import { Status } from "../enums.js";
-import type { ValidationErrors } from "../types/validate.js";
+import { Status } from "./errors.types.js";
+import type { FormattedErrors } from "../types/validate.js";
 
 export class EndpointError {
     public readonly status;
     public readonly message;
     public readonly name;
 
-    constructor(status: number, message: string | ValidationErrors, name?: string) {
+    constructor(status: number, message: string | FormattedErrors, name?: string) {
         this.status = status;
         this.message = message;
         this.name = name || Status[status] || Status[500]!;

@@ -1,5 +1,6 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, IsUUID } from "class-validator";
 import { IsValidDisplayName } from "../../../decorators/IsValidDisplayName.js";
+import type { UUID } from "../../../common/types/common.js";
 
 export class ModifyProfileDto {
     @IsOptional()
@@ -13,4 +14,9 @@ export class ModifyProfileDto {
     @IsOptional()
     @IsString()
     imageUrl?: string;
+}
+
+export class GetUserProfileDto {
+    @IsUUID("4")
+    userId!: UUID;
 }

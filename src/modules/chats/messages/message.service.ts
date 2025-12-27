@@ -9,12 +9,12 @@ import {
 import { AppDataSource } from "../../../db/data-source.js";
 import { Chat } from "../chat.entity.js";
 import { Message } from "./message.entity.js";
-import { ChatType, MessageType } from "../../../enums.js";
-import { EndpointError } from "../../../classes/EndpointError.js";
+import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { ChatMemberService } from "../members/chat-member.service.js";
-import type { UUID } from "../../../types/common.js";
+import type { UUID } from "../../../common/types/common.js";
 import type { DataSource } from "typeorm/browser";
-import type { SearchMessageQuery } from "./message.types.js";
+import { MessageType, type SearchMessageQuery } from "./message.types.js";
+import { ChatType } from "../chat.types.js";
 
 export class MessageService {
     private dataSource: DataSource;
