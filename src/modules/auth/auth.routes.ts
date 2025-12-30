@@ -2,6 +2,8 @@ import { Router } from "express";
 import type { AuthController } from "./auth.controller.js";
 import { validationMiddleware } from "../../common/middleware/validation.middleware.js";
 import { LoginDto, RegisterDto } from "./auth.dto.js";
+import { authenticateUser } from "../../common/middleware/auth.middleware.js";
+import { handle } from "../../common/utils/route.utils.js";
 
 
 export function createAuthRoutes (authController: AuthController) {
@@ -9,7 +11,7 @@ export function createAuthRoutes (authController: AuthController) {
 
     router.post("/register", validationMiddleware(RegisterDto, "body"), authController.register);
 
-    router.post("/login", validationMiddleware(LoginDto, "body"), authController.login);
+    router.post("/login", validationMiddleware(LoginDto, "body"), authenticateUser, handle(authController.login));
 
     router.post("/logout", authController.logout);
 

@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        // File Layout
+        "rootDir": "./src",
+        "outDir": "./dist",
+    },
+    "extends": "./tsconfig.json", // Inherit all your base settings
+    "include": [
+        "src/**/*" // Only compile the source
+    ],
+    "exclude": [
+        "node_modules",
+        "tests", // Explicitly exclude tests
+        "**/*.test.ts",
+        "**/*.spec.ts"
+    ]
+}

@@ -1,7 +1,9 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn } from "typeorm";
 import { ChatRole } from "../chat.types.js";
-import { Chat } from "../chat.entity.js";
-import { User } from "../../users/user.entity.js";
+import { Chat as ChatEntity } from "../chat.entity.js";
+import type { Chat } from "../chat.entity.js";
+import { User as UserEntity } from "../../users/user.entity.js";
+import type { User } from "../../users/user.entity.js";
 import type { UUID } from "../../../common/types/common.js";
 
 @Entity({ name: "chat_members"})
@@ -30,11 +32,11 @@ export class ChatMember {
     @Column({ type: "datetime", nullable: true })
     lastReadAt!: Date | null;
 
-    @ManyToOne(() => Chat, (chat) => chat, { onDelete: "CASCADE" })
+    @ManyToOne(() => ChatEntity, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })
     chat!: Chat;
 
-    @ManyToOne(() => User, (user) => user, { onDelete: "CASCADE" })
+    @ManyToOne(() => UserEntity, (user) => user, { onDelete: "CASCADE" })
     @JoinColumn({ name: "user_id" })
     user!: User;
 }

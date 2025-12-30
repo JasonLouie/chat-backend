@@ -1,10 +1,11 @@
-import { AuthService } from "../../../src/modules/auth/auth.service";
-import { TokenService } from "../../../src/modules/auth/tokens/token.service";
-import { ChatService } from "../../../src/modules/chats/chat.service";
-import { ChatMemberService } from "../../../src/modules/chats/members/chat-member.service";
-import { MessageService } from "../../../src/modules/chats/messages/message.service";
-import { ProfileService } from "../../../src/modules/users/profiles/profile.service";
-import { UserService } from "../../../src/modules/users/user.service";
+import { jest } from '@jest/globals';
+import { AuthService } from "../../../src/modules/auth/auth.service.js";
+import { TokenService } from "../../../src/modules/auth/tokens/token.service.js";
+import { ChatService } from "../../../src/modules/chats/chat.service.js";
+import { ChatMemberService } from "../../../src/modules/chats/members/chat-member.service.js";
+import { MessageService } from "../../../src/modules/chats/messages/message.service.js";
+import { ProfileService } from "../../../src/modules/users/profiles/profile.service.js";
+import { UserService } from "../../../src/modules/users/user.service.js";
 
 export const mockUserService = {
     getUserFull: jest.fn(),

@@ -4,6 +4,7 @@ import { TokenService } from "./tokens/token.service.js";
 import { ProfileService } from "../users/profiles/profile.service.js";
 import type { User } from "../users/user.entity.js";
 import { clearAuthCookies, sendAuthCookies } from "../../common/utils/cookie.utils.js";
+import type { ProtectedRequest } from "../../common/types/express.types.js";
 
 export class AuthController {
     private authService: AuthService;
@@ -37,12 +38,12 @@ export class AuthController {
     /**
      * POST /api/auth/login
      */
-    public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public login = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { id } = req.user as User;
+            const userId = req.user.id;
             const [tokens, fullProfile] = await Promise.all([
-                this.tokenService.generateTokens(id),
-                this.profileService.getProfile(id)
+                this.tokenService.generateTokens(userId),
+                this.profileService.getProfile(userId)
             ]);
             sendAuthCookies(tokens, res);
             res.json(fullProfile);

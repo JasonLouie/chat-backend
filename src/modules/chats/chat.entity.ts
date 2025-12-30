@@ -1,6 +1,8 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { ChatMember } from "./members/chat-member.entity.js";
-import { Message } from "./messages/message.entity.js";
+import { ChatMember as ChatMemberEntity } from "./members/chat-member.entity.js";
+import type { ChatMember } from "./members/chat-member.entity.js";
+import { Message as MessageEntity } from "./messages/message.entity.js";
+import type { Message } from "./messages/message.entity.js";
 import type { UUID } from "../../common/types/common.js";
 import { ChatType } from "./chat.types.js";
 
@@ -24,13 +26,13 @@ export class Chat {
     @CreateDateColumn()
     createdAt!: Date;
 
-    @OneToMany(() => ChatMember, (chatMember) => chatMember.chat)
+    @OneToMany(() => ChatMemberEntity, (chatMember) => chatMember.chat)
     members!: ChatMember[];
 
-    @OneToMany(() => Message, (message) => message.chat)
+    @OneToMany(() => MessageEntity, (message) => message.chat)
     messages!: Message[];
 
-    @OneToOne(() => Message, { nullable: true })
+    @OneToOne(() => MessageEntity, { nullable: true })
     @JoinColumn({ name: "last_message_id" })
     lastMessage!: Message | null;
 

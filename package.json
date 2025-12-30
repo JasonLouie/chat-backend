@@ -5,9 +5,10 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js"
   },
   "keywords": [],
@@ -33,6 +34,7 @@
     "typeorm-naming-strategies": "^4.1.0"
   },
   "devDependencies": {
+    "@jest/globals": "^30.2.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -44,6 +46,7 @@
     "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
+    "cross-env": "^10.1.0",
     "jest": "^30.2.0",
     "node-mocks-http": "^1.17.2",
     "nodemon": "^3.1.11",

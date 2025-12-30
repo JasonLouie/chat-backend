@@ -1,10 +1,10 @@
+import { type Response } from "express";
 import { createRequest, createResponse } from "node-mocks-http";
-import { MessageController } from "../../../../../../src/modules/chats/messages/message.controller";
-import { EndpointError } from "../../../../../../src/common/errors/EndpointError";
-import { ProtectedRequest } from "../../../../../../src/common/types/express.types";
-import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock";
-import { createTestUser } from "../../../../fixtures/user.fixture";
-import { Response } from "express";
+import { MessageController } from "../../../../../../src/modules/chats/messages/message.controller.js";
+import { EndpointError } from "../../../../../../src/common/errors/EndpointError.js";
+import { type ProtectedRequest } from "../../../../../../src/common/types/express.types.js";
+import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
+import { createTestUser } from "../../../../fixtures/user.fixture.js";
 
 describe("MessageController", () => {
     let messageController: MessageController;

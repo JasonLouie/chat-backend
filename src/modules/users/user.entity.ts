@@ -1,8 +1,12 @@
 import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Profile } from "./profiles/profile.entity.js";
-import { ChatMember } from "../chats/members/chat-member.entity.js";
-import { Message } from "../chats/messages/message.entity.js";
-import { RefreshToken } from "../auth/tokens/refresh-token.entity.js";
+import { Profile as ProfileEntity } from "./profiles/profile.entity.js";
+import type { Profile } from "./profiles/profile.entity.js";
+import { ChatMember as ChatMemberEntity } from "../chats/members/chat-member.entity.js";
+import type { ChatMember } from "../chats/members/chat-member.entity.js";
+import { Message as MessageEntity } from "../chats/messages/message.entity.js";
+import type { Message } from "../chats/messages/message.entity.js";
+import { RefreshToken as RefreshTokenEntity } from "../auth/tokens/refresh-token.entity.js";
+import type { RefreshToken } from "../auth/tokens/refresh-token.entity.js";
 import type { UUID } from "../../common/types/common.js";
 import bcrypt from "bcryptjs";
 
@@ -40,18 +44,18 @@ export class User {
         return await bcrypt.compare(candidatePassword, this.password);
     }
 
-    @OneToOne(() => Profile, (profile) => profile.user, {
+    @OneToOne(() => ProfileEntity, (profile) => profile.user, {
         cascade: true,
         eager: true
     })
     profile!: Profile;
 
-    @OneToMany(() => ChatMember, (chatMember) => chatMember.user)
+    @OneToMany(() => ChatMemberEntity, (chatMember) => chatMember.user)
     chatMembers!: ChatMember[];
 
-    @OneToMany(() => Message, (message) => message.sender)
+    @OneToMany(() => MessageEntity, (message) => message.sender)
     messages!: Message[];
 
-    @OneToMany(() => RefreshToken, (token) => token.user)
+    @OneToMany(() => RefreshTokenEntity, (token) => token.user)
     tokens!: RefreshToken[];
 }
