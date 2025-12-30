@@ -5,7 +5,6 @@ import type { UUID } from "../../common/types/common.js";
 import { type DataSource } from "typeorm";
 import { UserService } from "../users/user.service.js";
 
-
 export class AuthService {
     private dataSource: DataSource;
     private userService: UserService;

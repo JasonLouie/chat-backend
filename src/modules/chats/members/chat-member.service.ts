@@ -191,7 +191,7 @@ export class ChatMemberService {
     }
 
     /**
-     * Creates Chat DM members
+     * Creates Chat DM members (helper function for ChatService)
      */
     public createDMMembers = async (manager: EntityManager, chatId: UUID, userIds: UUID[]): Promise<void> => {
         const members = this.createChatMembers(manager, chatId, userIds);
@@ -199,7 +199,7 @@ export class ChatMemberService {
     }
 
     /**
-     * Creates Chat Group members
+     * Creates Chat Group members (helper function for ChatService)
      */
     public createGroupMembers = async (manager: EntityManager, chatId: UUID, memberIds: UUID[], creatorId: UUID): Promise<void> => {
         // Handle members

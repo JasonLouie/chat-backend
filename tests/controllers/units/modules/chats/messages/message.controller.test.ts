@@ -1,25 +1,28 @@
 import { createRequest, createResponse } from "node-mocks-http";
-import { MessageController } from "../../src/controllers/MessageController";
-import { MessageService } from "../../src/services/MessageService";
-import { EndpointError } from "../../src/classes/EndpointError";
+import { MessageController } from "../../../../../../src/modules/chats/messages/message.controller";
+import { EndpointError } from "../../../../../../src/common/errors/EndpointError";
+import { ProtectedRequest } from "../../../../../../src/common/types/express.types";
+import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock";
+import { createTestUser } from "../../../../fixtures/user.fixture";
+import { Response } from "express";
 
 describe("MessageController", () => {
     let messageController: MessageController;
-    let mockMessageService: jest.Mocked<MessageService>;
+    let req: Partial<ProtectedRequest>;
+    let res: Partial<Response>;
+    let next: jest.Mock;
 
     beforeEach(() => {
-        // Create fake service with Jest Mocks
-        // Cast it to 'unkown' to bypass private property checks
-        mockMessageService = {
-            sendMessage: jest.fn(),
-            updateMessage: jest.fn(),
-            pinMessage: jest.fn(),
-            deleteMessage: jest.fn(),
-            searchMessages: jest.fn()
-        } as unknown as jest.Mocked<MessageService>;
+        resetServiceMocks();
 
         // Inject Fake Service into the Real Controller
         messageController = new MessageController(mockMessageService);
+
+        req = { params: {}, body: {}, user: createTestUser() };
+        res = {
+            json: jest.fn()
+        }
+        next = jest.fn();
     });
 
     describe("searchMessages", () => {
@@ -37,7 +40,7 @@ describe("MessageController", () => {
                 user: { id: "user-123" },
                 params: { chatId: "chat-abc" },
                 body: { content: "Hello World", type: "text" }
-            });
+            }) as ProtectedRequest;
             const res = createResponse();
             const next = jest.fn();
 
@@ -64,7 +67,7 @@ describe("MessageController", () => {
                 user: { id: "user-1" },
                 params: { chatId: "chat-1" },
                 body: { content: "Hi" }
-            });
+            }) as ProtectedRequest;
             const res = createResponse();
             const next = jest.fn();
 

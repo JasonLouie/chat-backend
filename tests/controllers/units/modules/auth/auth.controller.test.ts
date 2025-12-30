@@ -1,42 +1,27 @@
 import { createRequest, createResponse } from "node-mocks-http";
-import { AuthController } from "../../src/controllers/AuthController";
-import { AuthService } from "../../src/services/AuthService";
-import { EndpointError } from "../../src/classes/EndpointError";
-import { ProfileService } from "../../src/services/ProfileService";
-import { TokenService } from "../../src/services/TokenService";
-import { UserStatus } from "../../src/enums";
+import { AuthController } from "../../../../../src/modules/auth/auth.controller";
+import { EndpointError } from "../../../../../src/common/errors/EndpointError";
+import { UserStatus } from "../../../../../src/modules/users/user.types";
+import { mockAuthService, mockProfileService, mockTokenService, resetServiceMocks } from "../../../mocks/services.mock";
+import { Request, Response } from "express";
 
 describe("AuthController", () => {
     let authController: AuthController;
-    let mockAuthService: jest.Mocked<AuthService>;
-    let mockProfileService: jest.Mocked<ProfileService>;
-    let mockTokenService: jest.Mocked<TokenService>;
+    let req: Partial<Request>;
+    let res: Partial<Response>;
+    let next: jest.Mock;
 
     beforeEach(() => {
-        // Create fake service with Jest Mocks
-        // Cast it to 'unkown' to bypass private property checks
-        mockAuthService = {
-            findUserById: jest.fn(),
-            getUserFullorThrow: jest.fn(),
-            register: jest.fn(),
-            validateUser: jest.fn(),
-            updateUsername: jest.fn(),
-            updatePassword: jest.fn(),
-            updateEmail: jest.fn()
-        } as unknown as jest.Mocked<AuthService>;
-
-        mockProfileService = {
-            getProfile: jest.fn()
-        } as unknown as jest.Mocked<ProfileService>;
-
-        mockTokenService = {
-            generateTokens: jest.fn(),
-            refresh: jest.fn(),
-            removeToken: jest.fn()
-        } as unknown as jest.Mocked<TokenService>;
+        resetServiceMocks();
 
         // Inject Fake Service into the Real Controller
         authController = new AuthController(mockAuthService, mockProfileService, mockTokenService);
+    
+        req = { params: {}, body: {} };
+                res = {
+                    json: jest.fn()
+                }
+                next = jest.fn();
     });
 
     describe("register", () => {
