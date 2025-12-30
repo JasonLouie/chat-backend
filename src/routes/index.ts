@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Container } from "../container.js";
 import { createAuthRoutes } from "../modules/auth/auth.routes.js";
-import { protect } from "../common/middleware/auth.js";
+import { protect } from "../common/middleware/auth.middleware.js";
 import { createUserRoutes } from "../modules/users/user.routes.js";
 import { createChatRoutes } from "../modules/chats/chat.routes.js";
 

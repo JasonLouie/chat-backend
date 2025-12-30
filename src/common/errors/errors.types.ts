@@ -6,3 +6,7 @@ export enum Status {
     Conflict = 409,
     Server_Error = 500
 }
+
+export interface FormattedErrors {
+    [field: string]: string[];
+}

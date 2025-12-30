@@ -1,17 +1,21 @@
 import { Router } from "express";
 import type { ProfileController } from "./profile.controller.js";
-import { validationMiddleware } from "../../../common/middleware/validationMiddleware.js";
-import { GetUserProfileDto, ModifyProfileDto } from "./profile.dto.js";
+import { ModifyProfileDto } from "./profile.dto.js";
+import { validationMiddleware } from "../../../common/middleware/validation.middleware.js";
 import { handle } from "../../../common/utils/route.utils.js";
+import { upload } from "../../../common/middleware/upload.middleware.js";
+import { ProfileParamsDto } from "../../../common/params/params.dto.js";
 
 export function createProfileRoutes(profileController: ProfileController) {
     const router = Router();
+    
+    router.route("/me/profile") 
+        .get(handle(profileController.getMyProfile))
+        .patch(validationMiddleware(ModifyProfileDto, "body", true), handle(profileController.modifyProfile));
 
-    router.patch("/", validationMiddleware(ModifyProfileDto, "body", true), handle(profileController.modifyProfile));
+    router.post("/me/profile/upload-avatar", upload.single("avatar"), handle(profileController.updateProfilePicture));
 
-    router.get("/me", handle(profileController.getMyProfile));
-
-    router.get("/:userId", validationMiddleware(GetUserProfileDto, "params"), handle(profileController.getUserProfile));
+    router.get("/:userId/profile", validationMiddleware(ProfileParamsDto, "params"), handle(profileController.getUserProfile));
 
     return router;
 }

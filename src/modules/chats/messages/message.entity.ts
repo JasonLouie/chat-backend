@@ -30,13 +30,13 @@ export class Message {
     @Column({ type: "text" })
     content!: string;
 
-    @Column( { default: false } )
+    @Column( { type: "boolean", default: false } )
     pinned!: boolean;
 
     @CreateDateColumn()
     createdAt!: Date;
 
-    @Column({ nullable: true })
+    @Column({ type: "datetime", nullable: true })
     editedAt!: Date | null;
 
     @ManyToOne(() => Chat, (chat) => chat, { onDelete: "CASCADE" })

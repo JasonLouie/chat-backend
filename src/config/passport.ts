@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { ExtractJwt, Strategy as JWTStrategy } from "passport-jwt";
 import type { Request } from "express";
-import { AuthService } from "../services/AuthService.js";
+import { AuthService } from "../modules/auth/auth.service.js";
 
 export const configurePassport = (authService: AuthService) => {
     // Local strategy for logging in

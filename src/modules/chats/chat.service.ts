@@ -78,9 +78,9 @@ export class ChatService {
     }
 
     /**
-     * Modifies a chat group
+     * Modifies a chat group (name or imageUrl)
      */
-    public modifyChatGroup = async (chatId: UUID, userId: UUID, newName?: string, newImageUrl?: string): Promise<void> => {
+    public modifyChatGroup = async (chatId: UUID, userId: UUID, updates: Partial<Chat>): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             const { chat } = await this.chatMemberService.validateChatMembership(manager, chatId, userId, true);
 
@@ -88,17 +88,10 @@ export class ChatService {
         
             await this.chatMemberService.validateChatMembership(manager, chatId, userId);
 
-            if (!newName && !newImageUrl) return;
+            // Do not run DB query if there are no updates
+            if (Object.keys(updates).length === 0) return;
 
-            if (newName) {
-                chat.name = newName;
-            }
-
-            if (newImageUrl) {
-                chat.imageUrl = newImageUrl;
-            }
-
-            await manager.save(Chat, chat);
+            await manager.save(Chat, updates);
         });
     }
 
@@ -152,7 +145,7 @@ export class ChatService {
         // Create Chat entity
         const chat = manager.create(Chat, {
             type: ChatType.GROUP,
-            name: name || null,
+            name: name || "Untitled Chat Group",
             imageUrl: imageUrl || null
         });
         const savedChat = await manager.save(Chat, chat);

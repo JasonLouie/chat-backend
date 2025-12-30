@@ -1,14 +1,25 @@
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
-import { MessageType } from "../../../enums.js";
-import { Transform, Type } from "class-transformer";
+import { IsOptional, IsString } from "class-validator";
+import { MessageType } from "./message.types.js";
+import { Type } from "class-transformer";
+import { IsValidLimit } from "../../../decorators/IsValidLimit.js";
+import { IsMessageType } from "../../../decorators/IsMessageType.js";
+import { IsValidBoolean } from "../../../decorators/IsValidBoolean.js";
+
+export class GetMessagesDto {
+    @IsOptional()
+    @Type(() => Date)
+    cursor?: Date;
+
+    @IsValidLimit()
+    limit?: number;
+}
 
 export class SearchMessagesDto {
     @IsOptional()
     @IsString()
     keyword?: string;
 
-    @IsOptional()
-    @IsEnum(MessageType, { message: "Type must be text, image, or system" })
+    @IsMessageType()
     type?: MessageType;
 
     @IsOptional()
@@ -19,19 +30,27 @@ export class SearchMessagesDto {
     @Type(() => Date)
     afterDate?: Date;
 
-    @IsOptional()
-    @IsBoolean()
-    @Transform(({ value }) => {
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-    })
+    @IsValidBoolean()
     pinned?: boolean;
 
-    @IsOptional()
-    @IsInt()
-    @Min(1)
-    @Max(100)
-    @Type(() => Number)
-    limit?: number = 30;
+    @IsValidLimit()
+    limit?: number;
+}
+
+export class SendMessageDto {
+    @IsMessageType(false)
+    type!: MessageType;
+
+    @IsString()
+    content!: string;
+}
+
+export class UpdateMessageDto {
+    @IsString()
+    content!: string;
+}
+
+export class PinMessageDto {
+    @IsValidBoolean(false)
+    pinned!: boolean;
 }

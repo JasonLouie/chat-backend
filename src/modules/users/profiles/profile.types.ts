@@ -11,6 +11,6 @@ export interface ProfileResponse {
 }
 
 export interface ModifyProfileBody {
-    newBio?: string;
-    newImageUrl?: string;
+    newBio?: string | undefined;
+    newDisplayName?: string | undefined;
 }

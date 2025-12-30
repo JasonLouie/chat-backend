@@ -1,4 +1,3 @@
-import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { User } from "../modules/users/user.entity.js";
 import { Profile } from "../modules/users/profiles/profile.entity.js";

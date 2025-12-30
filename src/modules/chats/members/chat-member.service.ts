@@ -14,6 +14,37 @@ export class ChatMemberService {
     }
 
     /**
+     * Returns all members of a chat
+     */
+    public getChatMembers = async(chatId: UUID, userId: UUID): Promise<ChatMember[]> => {
+        const manager = this.dataSource.manager;
+        await this.validateChatMembership(manager, chatId, userId);
+        return await manager.find(ChatMember, {
+            where: { chatId },
+            relations: {
+                user: {
+                    profile: true
+                }
+            },
+            select: {
+                role: true,
+                joinedAt: true,
+                user: {
+                    id: true,
+                    username: true,
+                    profile: {
+                        displayName: true,
+                        imageUrl: true
+                    }
+                }
+            },
+            order: {
+                joinedAt: "ASC"
+            }
+        });
+    }
+
+    /**
      * Handles leaving chats (DMs and Groups)
      */
     public leaveChat = async (chatId: UUID, userId: UUID): Promise<void> => {

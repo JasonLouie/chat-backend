@@ -1,5 +1,4 @@
-import { Status } from "./errors.types.js";
-import type { FormattedErrors } from "../types/validate.js";
+import { Status, type FormattedErrors } from "./errors.types.js";
 
 export class EndpointError {
     public readonly status;

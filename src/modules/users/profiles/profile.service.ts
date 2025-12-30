@@ -41,19 +41,9 @@ export class ProfileService {
     }
 
     /**
-     * PATCH /api/profile/me - Modify imageUrl or bio
+     * Modify bio or displayName
      */
-    public modifyProfile = async (userId: UUID, newBio?: string, newImageUrl?: string): Promise<void> => {
-        const updates: Partial<Profile> = {};
-
-        if (newBio) {
-            updates.bio = newBio;
-        }
-
-        if (newImageUrl) {
-            updates.imageUrl = newImageUrl;
-        }
-
+    public modifyProfile = async (userId: UUID, updates: Partial<Profile>): Promise<void> => {
         // Do not run DB query if there are no updates
         if (Object.keys(updates).length === 0) return;
 

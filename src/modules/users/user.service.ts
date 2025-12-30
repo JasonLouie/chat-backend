@@ -3,7 +3,7 @@ import { AppDataSource } from "../../db/data-source.js";
 import type { UUID } from "../../common/types/common.js";
 import { EndpointError } from "../../common/errors/EndpointError.js";
 import { User } from "./user.entity.js";
-import type { FormattedErrors } from "../../common/types/validate.js";
+import type { FormattedErrors } from "../../common/errors/errors.types.js";
 
 export class UserService {
     private dataSource: DataSource;

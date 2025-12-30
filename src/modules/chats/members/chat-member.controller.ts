@@ -3,13 +3,29 @@ import { ChatMemberService } from "./chat-member.service.js";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 import type { ProtectedRequest } from "../../../common/types/express.types.js";
 import { ChatRole } from "../chat.types.js";
-import type { ChatMemberParams } from "../../../common/params/params.types.js";
+import type { ChatMemberParams, ChatParams } from "../../../common/params/params.types.js";
+import type { UpdateMemberBody } from "./chat-member.types.js";
 
 export class ChatMemberController {
     private chatMemberService: ChatMemberService;
 
     constructor(chatMemberService: ChatMemberService) {
         this.chatMemberService = chatMemberService;
+    }
+
+    /**
+     * GET /api/chats/:chatId/members 
+     */
+    public getMembers = async (req: ProtectedRequest<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const userId = req.user.id;
+            const { chatId } = req.params;
+            
+            const members = await this.chatMemberService.getChatMembers(chatId, userId);
+            res.json(members);
+        } catch (err) {
+            next(err);
+        }
     }
 
     /**
@@ -34,10 +50,11 @@ export class ChatMemberController {
     /**
      * POST /api/chats/:chatId/members/:memberId
      */
-    public addMember = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public addMember = async (req: ProtectedRequest<ChatMemberParams>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId, memberId } = req.params;
             const userId = req.user.id;
+
             const member = await this.chatMemberService.addMember(chatId, userId, memberId);
             res.status(201).json(member);
         } catch (err) {
@@ -48,7 +65,7 @@ export class ChatMemberController {
     /**
      * PATCH /api/chats/:chatId/:memberId
      */
-    public updateMember = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public updateMember = async (req: ProtectedRequest<ChatMemberParams, any, UpdateMemberBody>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId, memberId } = req.params;
             const userId = req.user.id;

@@ -1,20 +1,32 @@
 export enum MessageType {
     TEXT = "text",
     IMAGE = "image",
-    VOICE = "voice",
     SYSTEM = "system"
 }
 
-export interface GetChatMessagesQuery {
+export interface GetMessagesQuery {
     cursor?: Date | undefined;
     limit?: number | undefined;
 }
 
-export interface SearchMessageQuery {
+export interface SearchMessagesQuery {
     keyword?: string | undefined;
     type?: MessageType | undefined;
     beforeDate?: Date | undefined;
     afterDate?: Date | undefined;
     pinned?: boolean | undefined;
     limit?: number | undefined;
+}
+
+export interface SendMessageBody {
+    type: MessageType;
+    content: string;
+}
+
+export interface UpdateMessageBody {
+    content: string;
+}
+
+export interface PinMessageBody {
+    pinned: boolean;
 }

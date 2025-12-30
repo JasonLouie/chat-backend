@@ -1,15 +1,10 @@
 export const ProfileRules = {
     DISPLAY_NAME: {
-        MIN_LENGTH: 1,
-        MAX_LENGTH: 50,
-        REGEX: /^[a-zA-Z0-9_. ]+$/,
-        MESSAGE: 'Display name can only contain letters, numbers, spaces, periods, and underscores.'
+        MIN_LENGTH: 2,
+        MAX_LENGTH: 30
     },
     BIO: {
-        MIN_LENGTH: 1,
-        MAX_LENGTH: 50
-    },
-    IMAGE_URL: {
-
-    },
+        MAX_LENGTH: 160,
+        MESSAGE: "Bio is too long. Maximum is 160 characters."
+    }
 }

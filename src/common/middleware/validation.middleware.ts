@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
-import type { FormattedErrors } from '../types/validate.js';
+import type { FormattedErrors } from '../errors/errors.types.js';
 import { EndpointError } from '../errors/EndpointError.js';
 
 const formatErrors = (errors: ValidationError[]): FormattedErrors => {
@@ -17,7 +17,7 @@ const formatErrors = (errors: ValidationError[]): FormattedErrors => {
 
 /**
  * @param type - The DTO class to validate against
- * @param value - The property of req to validate ('body', 'query', 'params')
+ * @param value - The property of req to validate ('body', 'query', 'params'). Default: 'body'
  * @param skipMissingProperties - If true, ignores fields missing from the DTO (useful for PATCH)
  */
 export function validationMiddleware<T>(

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { AuthController } from "./auth.controller.js";
-import { validationMiddleware } from "../../common/middleware/validationMiddleware.js";
+import { validationMiddleware } from "../../common/middleware/validation.middleware.js";
 import { LoginDto, RegisterDto } from "./auth.dto.js";
 
 
