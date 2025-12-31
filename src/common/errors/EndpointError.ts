@@ -1,14 +1,14 @@
-import { Status, type FormattedErrors } from "./errors.types.js";
+import { ErrorNames, type FormattedErrors } from "./errors.types.js";
 
 export class EndpointError {
     public readonly status;
     public readonly message;
     public readonly name;
 
-    constructor(status: number, message: string | FormattedErrors, name?: string) {
+    constructor(status: number, message?: string | FormattedErrors, name?: string) {
         this.status = status;
         this.message = message;
-        this.name = name || Status[status] || Status[500]!;
+        this.name = name || ErrorNames[status] || ErrorNames[500];
     }
 
     toJSON() {

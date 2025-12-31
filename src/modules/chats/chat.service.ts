@@ -1,4 +1,4 @@
-import { DataSource, type EntityManager } from "typeorm";
+import { DataSource, Repository, type EntityManager } from "typeorm";
 import { AppDataSource } from "../../db/data-source.js";
 import { Chat } from "./chat.entity.js";
 import type { UUID } from "../../common/types/common.js";
@@ -8,21 +8,18 @@ import { ChatMemberService } from "./members/chat-member.service.js";
 import { UserService } from "../users/user.service.js";
 
 export class ChatService {
-    private dataSource: DataSource;
-    private userService: UserService;
-    private chatMemberService: ChatMemberService;
-
-    constructor(userService: UserService, chatMemberService: ChatMemberService) {
-        this.dataSource = AppDataSource;
-        this.userService = userService;
-        this.chatMemberService = chatMemberService;
-    }
+    constructor(
+        private userService: UserService,
+        private chatMemberService: ChatMemberService,
+        private defaultRepo: Repository<Chat> = AppDataSource.getRepository(Chat),
+        private dataSource: DataSource = AppDataSource
+    ) {}
 
     /**
      * Returns list of chats the user is in. Chat Dashboard functionality
      */
     public getUserChats = async (userId: UUID): Promise<Chat[]> => {
-        return await this.dataSource.getRepository(Chat).createQueryBuilder("chat")
+        return await this.defaultRepo.createQueryBuilder("chat")
             // Only get chats where this user is a member
             .innerJoin("chat.members", "member")
             .where("member.userId = :userId", { userId })
@@ -82,12 +79,10 @@ export class ChatService {
      */
     public modifyChatGroup = async (chatId: UUID, userId: UUID, updates: Partial<Chat>): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
-            const { chat } = await this.chatMemberService.validateChatMembership(manager, chatId, userId, true);
+            const { chat } = await this.chatMemberService.validateChatMembership(chatId, userId, true, manager);
 
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot modify settings for a private chat.");
         
-            await this.chatMemberService.validateChatMembership(manager, chatId, userId);
-
             // Do not run DB query if there are no updates
             if (Object.keys(updates).length === 0) return;
 
@@ -99,7 +94,7 @@ export class ChatService {
      * Restores a deleted private chat for a particular user
      */
     private restoreChat = async (manager: EntityManager, chatId: UUID, userId: UUID): Promise<void> => {
-        const member = await this.chatMemberService.getExistingMember(manager, chatId, userId, true);
+        const member = await this.chatMemberService.getExistingMember(chatId, userId, manager, true);
 
         // Member cannot be null because an existing chat was already found before reaching this helper function.
         if (member && member.deletedAt !== null) {
@@ -134,7 +129,7 @@ export class ChatService {
         const savedChat = await manager.save(Chat, chat);
 
         // Create members
-        await this.chatMemberService.createDMMembers(manager, savedChat.id, [userA, userB]);
+        await this.chatMemberService.createDMMembers(savedChat.id, [userA, userB], manager);
         return savedChat;
     }
 
@@ -151,7 +146,7 @@ export class ChatService {
         const savedChat = await manager.save(Chat, chat);
 
         // Create members
-        await this.chatMemberService.createGroupMembers(manager, savedChat.id, memberIds, creatorId);
+        await this.chatMemberService.createGroupMembers(savedChat.id, memberIds, creatorId, manager);
         return savedChat;
     }
 }

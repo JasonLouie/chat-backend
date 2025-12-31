@@ -6,11 +6,9 @@ import { User } from "./user.entity.js";
 import type { FormattedErrors } from "../../common/errors/errors.types.js";
 
 export class UserService {
-    private dataSource: DataSource;
-
-    constructor() {
-        this.dataSource = AppDataSource;
-    }
+    constructor(
+        private dataSource = AppDataSource
+    ) {}
 
     /**
      * Returns the user's id, username, and email
@@ -22,8 +20,8 @@ export class UserService {
             select: { id: true, username: true, email: true }
         });
 
-        // User does not exist
-        if (!user) throw new EndpointError(404, "User does not exist.");
+        // User not found
+        if (!user) throw new EndpointError(404, "User not found.");
         return user;
     }
 
@@ -171,7 +169,7 @@ export class UserService {
     }
 
     /**
-     * Finds a user by id. Returns 404 error if it does not exist.
+     * Finds a user by id. Returns 404 error if it not found.
      */
     private findUserOrThrow = async (
         id: UUID,
@@ -182,7 +180,7 @@ export class UserService {
             where: { id },
             select: { id: true, username: true, email: true, password: true },
         });
-        if (!user) throw new EndpointError(404, "User does not exist.");
+        if (!user) throw new EndpointError(404, "User not found.");
         return user;
     };
 }

@@ -60,7 +60,7 @@ export class AuthService {
             select: { id: true, username: true, password: true }
         });
 
-        // User does not exist
+        // User not found
         if (!user) return null;
 
         const isMatch = await user.comparePassword(password);

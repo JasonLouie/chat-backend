@@ -12,18 +12,16 @@ import { Message } from "./message.entity.js";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { ChatMemberService } from "../members/chat-member.service.js";
 import type { UUID } from "../../../common/types/common.js";
-import type { DataSource } from "typeorm/browser";
+import type { DataSource, Repository } from "typeorm";
 import { MessageType, type SearchMessagesQuery } from "./message.types.js";
 import { ChatType } from "../chat.types.js";
 
 export class MessageService {
-    private dataSource: DataSource;
-    private chatMemberService: ChatMemberService;
-
-    constructor(chatMemberService: ChatMemberService) {
-        this.dataSource = AppDataSource;
-        this.chatMemberService = chatMemberService;
-    }
+    constructor(
+        private chatMemberService: ChatMemberService,
+        private defaultRepo: Repository<Message> = AppDataSource.getRepository(Message),
+        private dataSource: DataSource = AppDataSource
+    ) {}
 
     /**
      * Search for messages
@@ -33,12 +31,10 @@ export class MessageService {
         userId: UUID,
         filters: SearchMessagesQuery
     ): Promise<Message[]> => {
-        const manager = this.dataSource.manager;
-
         await this.chatMemberService.validateChatMembership(
-            manager,
             chatId,
-            userId
+            userId,
+            false,
         );
 
         const { keyword, type, beforeDate, afterDate, pinned, limit } = filters;
@@ -73,7 +69,7 @@ export class MessageService {
             where.content = ILike(`%${keyword}%`);
         }
 
-        return await manager.find(Message, {
+        return await this.defaultRepo.find({
             where,
             order: { createdAt: "DESC" },
             take: limit || 30,
@@ -93,19 +89,19 @@ export class MessageService {
         return await this.dataSource.transaction(async (manager) => {
             const { chat } =
                 await this.chatMemberService.validateChatMembership(
-                    manager,
                     chatId,
                     senderId,
-                    true
+                    true,
+                    manager
                 );
 
             if (chat.type === ChatType.DM) {
                 // Find the recipient
                 const recipientMember =
                     await this.chatMemberService.getExistingMember(
-                        manager,
                         chatId,
                         senderId,
+                        manager,
                         true,
                         true
                     );
@@ -119,7 +115,7 @@ export class MessageService {
                 chatId,
                 senderId,
                 content,
-                type,
+                type
             });
 
             await this.updateLastMessage(manager, chatId, newMessage);
@@ -138,9 +134,10 @@ export class MessageService {
     ): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             await this.chatMemberService.validateChatMembership(
-                manager,
                 chatId,
-                userId
+                userId,
+                false,
+                manager
             );
 
             const message = await this.findMessageOrThrow(manager, messageId);
@@ -171,9 +168,10 @@ export class MessageService {
     ): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             await this.chatMemberService.validateChatMembership(
-                manager,
                 chatId,
-                userId
+                userId,
+                false,
+                manager
             );
 
             const message = await this.findMessageOrThrow(manager, messageId);
@@ -192,10 +190,10 @@ export class MessageService {
     ): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             await this.chatMemberService.validateChatMembership(
-                manager,
                 chatId,
                 userId,
-                true
+                true,
+                manager
             );
 
             const chat = await manager.findOne(Chat, {
@@ -224,7 +222,7 @@ export class MessageService {
     };
 
     /**
-     * Returns a particular message by messageId. Throws an error if the message does not exist.
+     * Returns a particular message by messageId. Throws an error if the message was not found.
      */
     private findMessageOrThrow = async (
         manager: EntityManager,

@@ -28,7 +28,7 @@ export class ProfileService {
             }
         });
 
-        if (!profile) throw new EndpointError(404, "User does not exist.");
+        if (!profile) throw new EndpointError(404, "Profile not found.");
 
         return {
             id: profile.id,
@@ -49,7 +49,7 @@ export class ProfileService {
 
         const result = await this.profileRepo.update(userId, updates);
         if (result.affected === 0) {
-            throw new EndpointError(404, "Profile does not exist.");
+            throw new EndpointError(404, "Profile not found.");
         }
     }
 }

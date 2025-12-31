@@ -1,24 +1,22 @@
-import { Not, type EntityManager } from "typeorm";
+import { Not, type EntityManager, type Repository, type DataSource } from "typeorm";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { AppDataSource } from "../../../db/data-source.js";
 import { ChatMember } from "./chat-member.entity.js";
 import type { UUID } from "../../../common/types/common.js";
 import { ChatRole, ChatType } from "../chat.types.js";
-import type { DataSource } from "typeorm/browser";
 
 export class ChatMemberService {
-    private dataSource: DataSource;
-
-    constructor() {
-        this.dataSource = AppDataSource;
-    }
+    constructor(
+        private defaultRepo: Repository<ChatMember> = AppDataSource.getRepository(ChatMember),
+        private dataSource: DataSource = AppDataSource
+    ) {}
 
     /**
      * Returns all members of a chat
      */
     public getChatMembers = async(chatId: UUID, userId: UUID): Promise<ChatMember[]> => {
         const manager = this.dataSource.manager;
-        await this.validateChatMembership(manager, chatId, userId);
+        await this.validateChatMembership(chatId, userId);
         return await manager.find(ChatMember, {
             where: { chatId },
             relations: {
@@ -50,7 +48,7 @@ export class ChatMemberService {
     public leaveChat = async (chatId: UUID, userId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             // Get member
-            const member = await this.validateChatMembership(manager, chatId, userId, true);
+            const member = await this.validateChatMembership(chatId, userId, true, manager);
             
             // If member is null, user already left the chat
             if (!member) return;
@@ -74,7 +72,7 @@ export class ChatMemberService {
     public addMember = async (chatId: UUID, initiatingUserId: UUID, newMemberId: UUID): Promise<ChatMember> => {
         return await this.dataSource.transaction(async (manager) => {
             // Check if user is in the chat
-            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            const initiatingUser = await this.validateChatMembership(chatId, initiatingUserId, true, manager);
             
             // Check if the chat is a group
             const { chat } = initiatingUser;
@@ -82,8 +80,8 @@ export class ChatMemberService {
 
             // Check if the initiating user is in the group
             const [memberCount, existingMember] = await Promise.all([
-                this.countMembers(manager, chatId),
-                this.getExistingMember(manager, chatId, newMemberId, true)
+                this.countMembers(chatId, undefined, manager),
+                this.getExistingMember(chatId, newMemberId, manager, true)
             ]);
 
             if (memberCount >= 10) throw new EndpointError(400, "Chat is full.");
@@ -113,14 +111,14 @@ export class ChatMemberService {
     public removeMember = async (chatId: UUID, initiatingUserId: UUID, memberId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             // Check if user is in the chat
-            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            const initiatingUser = await this.validateChatMembership(chatId, initiatingUserId, true, manager);
             
             // Check if the chat is a group
             const { chat } = initiatingUser;
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
-            const memberToRemove = await this.getExistingMember(manager, chatId, memberId);
+            const memberToRemove = await this.getExistingMember(chatId, memberId, manager);
             
             // Only OWNER can kick people
             if (initiatingUser.role !== ChatRole.OWNER) throw new EndpointError(403, "Only owners can remove members from a chat group.");
@@ -142,14 +140,14 @@ export class ChatMemberService {
     public transferOwnership = async (chatId: UUID, initiatingUserId: UUID, newOwnerId: UUID): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             // Check if user is in the chat
-            const initiatingUser = await this.validateChatMembership(manager, chatId, initiatingUserId, true);
+            const initiatingUser = await this.validateChatMembership(chatId, initiatingUserId, true, manager);
             
             // Check if the chat is a group
             const { chat } = initiatingUser;
             if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot remove members from a private chat.");
 
             // Check if the initiating user is in the group
-            const newOwner = await this.getExistingMember(manager, chatId, newOwnerId);
+            const newOwner = await this.getExistingMember(chatId, newOwnerId, manager);
 
             // Only OWNER can kick people
             if (initiatingUser.role !== ChatRole.OWNER) throw new EndpointError(403, "Only owners can remove members from a chat group.");
@@ -168,8 +166,9 @@ export class ChatMemberService {
     /**
      * Validates if the user is in a chat. Returns the member. Throws an error if the user is not a member of that chat. Optionally include chat.
      */
-    public validateChatMembership = async (manager: EntityManager, chatId: UUID, userId: UUID, withChat: boolean = false): Promise<ChatMember> => {
-        const member = await manager.findOne(ChatMember, {
+    public validateChatMembership = async (chatId: UUID, userId: UUID, withChat: boolean = false, manager?: EntityManager): Promise<ChatMember> => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        const member = await repo.findOne({
             where: { chatId, userId },
             ...(!withChat ? { select: ["chatId"] } : { relations: { chat: true} }),
         });
@@ -180,8 +179,9 @@ export class ChatMemberService {
     /**
      * Check if the member exists. Optionally include members that were deleted. Optionally exclude a particular user id from the search
      */
-    public getExistingMember = async (manager: EntityManager, chatId: UUID, userId: UUID, withDeleted: boolean = false, exclude: boolean = false): Promise<ChatMember | null> => {
-        return await manager.findOne(ChatMember, {
+    public getExistingMember = async (chatId: UUID, userId: UUID, manager?: EntityManager, withDeleted: boolean = false, exclude: boolean = false): Promise<ChatMember | null> => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        return await repo.findOne({
             where: {
                 chatId,
                 userId: exclude ? Not(userId) : userId
@@ -193,22 +193,25 @@ export class ChatMemberService {
     /**
      * Creates Chat DM members (helper function for ChatService)
      */
-    public createDMMembers = async (manager: EntityManager, chatId: UUID, userIds: UUID[]): Promise<void> => {
-        const members = this.createChatMembers(manager, chatId, userIds);
-        await manager.save(ChatMember, members);
+    public createDMMembers = async (chatId: UUID, userIds: UUID[], manager?: EntityManager): Promise<void> => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        const members = this.createChatMembers(chatId, userIds, manager);
+        await repo.save(members);
     }
 
     /**
      * Creates Chat Group members (helper function for ChatService)
      */
-    public createGroupMembers = async (manager: EntityManager, chatId: UUID, memberIds: UUID[], creatorId: UUID): Promise<void> => {
+    public createGroupMembers = async (chatId: UUID, memberIds: UUID[], creatorId: UUID, manager?: EntityManager): Promise<void> => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        
         // Handle members
-        const members = this.createChatMembers(manager, chatId, memberIds);
+        const members = this.createChatMembers(chatId, memberIds, manager);
 
         // Handle creator
-        members.push(manager.create(ChatMember, { chatId, userId: creatorId, role: ChatRole.OWNER }));
+        members.push(repo.create({ chatId, userId: creatorId, role: ChatRole.OWNER }));
         
-        await manager.save(ChatMember, members);
+        await repo.save(members);
     }
 
 
@@ -217,15 +220,17 @@ export class ChatMemberService {
     /**
      * Returns an array of Chat Member entities
      */
-    private createChatMembers = (manager: EntityManager, chatId: UUID, memberIds: UUID[]): ChatMember[] => {
-        return memberIds.map((userId: UUID) => manager.create(ChatMember, { chatId, userId, role: ChatRole.MEMBER }));
+    private createChatMembers = (chatId: UUID, memberIds: UUID[], manager?: EntityManager): ChatMember[] => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        return memberIds.map((userId: UUID) => repo.create({ chatId, userId, role: ChatRole.MEMBER }));
     }
 
     /**
      * Counts the number of members in a group. Optional currentUserId to exclude a user from the count
      */
-    private countMembers = async (manager: EntityManager, chatId: UUID, currentUserId?: UUID): Promise<number> => {
-        return await manager.count(ChatMember, {
+    private countMembers = async (chatId: UUID, currentUserId?: UUID, manager?: EntityManager): Promise<number> => {
+        const repo = manager ? manager.getRepository(ChatMember) : this.defaultRepo;
+        return await repo.count({
             where: {
                 chatId,
                 ...(currentUserId !== undefined && { userId: Not(currentUserId) } )
@@ -238,7 +243,7 @@ export class ChatMemberService {
      */
     private handleGroupLeave = async (manager: EntityManager, member: ChatMember): Promise<void> => {
         // Check if the person leaving is the last one in the group
-        const remainingCount = await this.countMembers(manager, member.chatId, member.userId);
+        const remainingCount = await this.countMembers(member.chatId, member.userId, manager);
         
         if (remainingCount === 0) {
             // Delete the group

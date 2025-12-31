@@ -1,4 +1,4 @@
-import type { RequestHandler, Request, Response, NextFunction } from "express";
+import type { RequestHandler, Response, NextFunction } from "express";
 import type { ProtectedRequest } from "../types/express.types.js";
 
 /**

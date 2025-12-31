@@ -5,17 +5,26 @@ import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { randomBytes } from "crypto";
 import type { UUID } from "../../../common/types/common.js";
 import type { Token, Tokens } from "./token.types.js";
+import type { Repository } from "typeorm";
 
 export class TokenService {
-    private tokenRepo = AppDataSource.getRepository(RefreshToken);
+    constructor(
+        private tokenRepo: Repository<RefreshToken> = AppDataSource.getRepository(RefreshToken)
+    ) {}
 
     /**
      * Generates access and refresh tokens
      */
     public generateTokens = async (userId: UUID): Promise<Tokens> => {
         const expiresIn = process.env.TOKEN_EXPIRATION as SignOptions["expiresIn"] || "1h";
-        const accessToken = jwt.sign({ sub: userId }, process.env.TOKEN_SECRET as string, { expiresIn: expiresIn });
-        
+        const JWT_SECRET = process.env.JWT_SECRET;
+
+        if (!JWT_SECRET) {
+            console.error("CRITICAL ERROR: JWT_SECRET is not defined in .env file.");
+            throw new EndpointError(500, "Internal Server Configuration Error.");
+        }
+
+        const accessToken = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn });
         const refreshToken = randomBytes(60).toString("hex");
         
         const expiresAt = new Date();

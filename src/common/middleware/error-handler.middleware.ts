@@ -1,15 +1,10 @@
 import { EndpointError } from "../errors/EndpointError.js";
 import type { Request, Response, NextFunction } from "express";
-
-interface Errors {
-    [key: string]: string[];
-}
+import type { FormattedErrors as Errors } from "../errors/errors.types.js";
 
 export function handleServerErrors(err: Error | EndpointError, req: Request, res: Response, next: NextFunction) {
     // Format TypeORM errors
     const errors: Errors = {};
-
-    // TO-DO: Handle entity validation errors, unique errors, type cast errors, and possibly version errors (409)
 
     // Send TypeORM errors
     if (Object.keys(errors).length > 0) {

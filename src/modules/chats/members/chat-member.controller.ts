@@ -7,11 +7,9 @@ import type { ChatMemberParams, ChatParams } from "../../../common/params/params
 import type { UpdateMemberBody } from "./chat-member.types.js";
 
 export class ChatMemberController {
-    private chatMemberService: ChatMemberService;
-
-    constructor(chatMemberService: ChatMemberService) {
-        this.chatMemberService = chatMemberService;
-    }
+    constructor(
+        private chatMemberService: ChatMemberService
+    ) {}
 
     /**
      * GET /api/chats/:chatId/members 

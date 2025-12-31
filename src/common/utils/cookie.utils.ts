@@ -1,5 +1,5 @@
 import type { Response, CookieOptions } from "express";
-import type { Tokens } from "../modules/auth/tokens/token.types.js";
+import type { Tokens } from "../../modules/auth/tokens/token.types.js";
 
 const cookieOptions: CookieOptions = {
     httpOnly: true,

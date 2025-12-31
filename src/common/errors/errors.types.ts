@@ -1,10 +1,10 @@
-export enum Status {
-    Bad_Request = 400,
-    Unauthorized = 401,
-    Forbidden = 403,
-    Not_Found = 404,
-    Conflict = 409,
-    Server_Error = 500
+export const ErrorNames: Record<number, string> = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden Action",
+    404: "Resource Not Found",
+    409: "Resource Conflict",
+    500: "Internal Server Error"
 }
 
 export interface FormattedErrors {

@@ -8,11 +8,9 @@ import { ImageFolder } from "../../../common/types/common.js";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 
 export class ProfileController {
-    private profileService: ProfileService;
-
-    constructor(profileService: ProfileService) {
-        this.profileService = profileService;
-    }
+    constructor(
+        private profileService: ProfileService
+    ) {}
 
     /**
      * GET /api/users/me/profile

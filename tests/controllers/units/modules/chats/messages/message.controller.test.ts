@@ -1,15 +1,17 @@
+import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
-import { createRequest, createResponse } from "node-mocks-http";
+import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
 import { MessageController } from "../../../../../../src/modules/chats/messages/message.controller.js";
 import { EndpointError } from "../../../../../../src/common/errors/EndpointError.js";
 import { type ProtectedRequest } from "../../../../../../src/common/types/express.types.js";
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
+import { MessageType } from '../../../../../../src/modules/chats/messages/message.types.js';
 
 describe("MessageController", () => {
     let messageController: MessageController;
     let req: Partial<ProtectedRequest>;
-    let res: Partial<Response>;
+    let res: MockResponse<Response>;
     let next: jest.Mock;
 
     beforeEach(() => {
@@ -19,9 +21,7 @@ describe("MessageController", () => {
         messageController = new MessageController(mockMessageService);
 
         req = { params: {}, body: {}, user: createTestUser() };
-        res = {
-            json: jest.fn()
-        }
+        res = createResponse();
         next = jest.fn();
     });
 
@@ -39,7 +39,7 @@ describe("MessageController", () => {
                 method: "POST",
                 user: { id: "user-123" },
                 params: { chatId: "chat-abc" },
-                body: { content: "Hello World", type: "text" }
+                body: { content: "Hello World", type: MessageType.TEXT }
             }) as ProtectedRequest;
             const res = createResponse();
             const next = jest.fn();
@@ -56,7 +56,7 @@ describe("MessageController", () => {
                 "chat-abc",
                 "user-123",
                 "Hello World",
-                "text"
+                MessageType.TEXT
             );
             expect(res.statusCode).toBe(201);
             expect(res._getJSONData()).toEqual(mockResult);
