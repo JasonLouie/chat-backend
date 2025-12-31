@@ -1,12 +1,12 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
 import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
-import { MessageController } from "../../../../../../src/modules/chats/messages/message.controller.js";
-import { EndpointError } from "../../../../../../src/common/errors/EndpointError.js";
-import { type ProtectedRequest } from "../../../../../../src/common/types/express.types.js";
+import { MessageController } from "../../../../../src/modules/chats/messages/message.controller.js";
+import { EndpointError } from "../../../../../src/common/errors/EndpointError.js";
+import { type ProtectedRequest } from "../../../../../src/common/types/express.types.js";
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
-import { MessageType } from '../../../../../../src/modules/chats/messages/message.types.js';
+import { MessageType } from '../../../../../src/modules/chats/messages/message.types.js';
 
 describe("MessageController", () => {
     let messageController: MessageController;

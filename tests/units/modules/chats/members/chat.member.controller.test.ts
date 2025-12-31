@@ -1,19 +1,19 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
+import { ChatMemberController } from "../../../../../src/modules/chats/members/chat-member.controller.js";
 import { createResponse, type MockResponse } from "node-mocks-http";
-import { ProfileController } from "../../../../../src/modules/users/profiles/profile.controller.js";
-import { mockProfileService, resetServiceMocks } from "../../../mocks/services.mock.js";
+import { mockChatMemberService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 
-describe("ProfileController", () => {
-    let profileController: ProfileController;
+describe("ChatMemberController", () => {
+    let chatMemberController: ChatMemberController;
     let res: MockResponse<Response>;
     let next: jest.Mock;
 
     beforeEach(() => {
         resetServiceMocks();
 
-        profileController = new ProfileController(
-            mockProfileService
+        chatMemberController = new ChatMemberController(
+            mockChatMemberService
         );
 
         res = createResponse();

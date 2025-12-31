@@ -1,6 +1,6 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
-import { UserController } from "../../../../../src/modules/users/user.controller.js";
+import { UserController } from "../../../../src/modules/users/user.controller.js";
 import { createResponse, type MockResponse } from "node-mocks-http";
 import { mockUserService, resetServiceMocks } from "../../../mocks/services.mock.js";
 

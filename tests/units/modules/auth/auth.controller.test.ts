@@ -1,13 +1,13 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
-import { createRequest, createResponse, type MockResponse, type ResponseCookie } from "node-mocks-http";
-import { AuthController } from "../../../../../src/modules/auth/auth.controller.js";
-import { EndpointError } from "../../../../../src/common/errors/EndpointError.js";
+import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
+import { AuthController } from "../../../../src/modules/auth/auth.controller.js";
+import { EndpointError } from "../../../../src/common/errors/EndpointError.js";
 import { mockAuthService, mockProfileService, mockTokenService, resetServiceMocks } from "../../../mocks/services.mock.js";
 import { createProfileResponse, createTestUser, TEST_EMAIL, TEST_PASSWORD, TEST_TOKENS, TEST_USER_ID, TEST_USERNAME } from "../../../fixtures/user.fixture.js";
-import type { ProtectedRequest } from '../../../../../src/common/types/express.types.js';
+import type { ProtectedRequest } from '../../../../src/common/types/express.types.js';
 import { AUTH_BODY } from './auth.constants.js';
-import { expectClearedToken, expectStatus204 } from "../../../../utils/testHelpers.js";
+import { expectClearedToken, expectStatus204 } from "../../../utils/testHelpers.js";
 
 describe("AuthController", () => {
     let authController: AuthController;
@@ -269,11 +269,30 @@ describe("AuthController", () => {
                 }
             });
 
-            
+            mockTokenService.removeToken.mockResolvedValue(undefined);
+
+            await authController.logout(req, res, next);
+
+            expectStatus204(res);
+
+            const cookies = res.cookies;
+
+            // Check if access token is cleared
+            expectClearedToken(cookies, "accessToken");
+
+            // Check if refresh token is cleared
+            expectClearedToken(cookies, "refreshToken");
         });
     });
 
     describe("refreshTokens", () => {
-        it("should return 204", async () => {});
+        it("should return 204", async () => {
+
+            // // Check cookies
+            // const cookies = res.cookies;
+
+            // expect(cookies.accessToken?.value).toBe(TEST_TOKENS.accessToken);
+            // expect(cookies.refreshToken?.value).toBe(TEST_TOKENS.refreshToken);
+        });
     });
 });

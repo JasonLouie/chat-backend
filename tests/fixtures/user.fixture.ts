@@ -1,8 +1,8 @@
-import type { Tokens } from "../../../src/modules/auth/tokens/token.types.js";
-import { Profile } from "../../../src/modules/users/profiles/profile.entity.js";
-import type { ProfileResponse } from "../../../src/modules/users/profiles/profile.types.js";
-import { User } from "../../../src/modules/users/user.entity.js";
-import { UserStatus } from "../../../src/modules/users/user.types.js";
+import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
+import { Profile } from "../../src/modules/users/profiles/profile.entity.js";
+import type { ProfileResponse } from "../../src/modules/users/profiles/profile.types.js";
+import { User } from "../../src/modules/users/user.entity.js";
+import { UserStatus } from "../../src/modules/users/user.types.js";
 
 export const TEST_USER_ID = "uuid-1234-5678";
 export const TEST_USERNAME = "testuser";
