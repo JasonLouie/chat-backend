@@ -2,12 +2,11 @@ import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
 import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
 import { AuthController } from "../../../../src/modules/auth/auth.controller.js";
-import { EndpointError } from "../../../../src/common/errors/EndpointError.js";
 import { mockAuthService, mockProfileService, mockTokenService, resetServiceMocks } from "../../../mocks/services.mock.js";
-import { createProfileResponse, createTestUser, OLD_TOKENS, TEST_EMAIL, TEST_PASSWORD, TEST_TOKENS, TEST_USER_ID, TEST_USERNAME } from "../../../fixtures/user.fixture.js";
+import { createProfileResponse, createTestUser, OLD_TOKENS, TEST_TOKENS } from "../../../fixtures/user.fixture.js";
 import type { ProtectedRequest } from '../../../../src/common/types/express.types.js';
 import { AUTH_BODY } from './auth.constants.js';
-import { expectClearedToken, expectStatus204, expectTokens } from "../../../utils/testHelpers.js";
+import { expectClearedToken, expectNextError, expectStatus204, expectTokens, genericError } from "../../../utils/testHelpers.js";
 
 describe("AuthController", () => {
     let authController: AuthController;
@@ -35,6 +34,7 @@ describe("AuthController", () => {
                 body: { ...AUTH_BODY.REGISTER }
             });
 
+            const { username, email, password } = AUTH_BODY.REGISTER;
             const mockUser = createTestUser();
             const mockProfileResponse = createProfileResponse();
 
@@ -46,19 +46,13 @@ describe("AuthController", () => {
 
             expect(res.statusCode).toBe(201);
 
-            expect(mockAuthService.register).toHaveBeenCalledWith(
-                TEST_USERNAME,
-                TEST_EMAIL,
-                TEST_PASSWORD
-            );
+            expect(mockAuthService.register).toHaveBeenCalledWith(username, email, password);
 
             expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
 
             expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
 
-            expect(res._getJSONData()).toEqual(expect.objectContaining({
-                ...mockProfileResponse
-            }));
+            expect(res._getJSONData()).toEqual(mockProfileResponse);
 
             // Check cookies
             const cookies = res.cookies;
@@ -66,19 +60,17 @@ describe("AuthController", () => {
             expectTokens(cookies);
         });
 
-        it("should pass the specific conflict error to next if registration fails", async () => {
+        it("should pass the error to next if registration fails", async () => {
             const req = createRequest({
                 method: "POST",
                 body: { ...AUTH_BODY.REGISTER }
             });
 
-            const conflictError = new EndpointError(409, { email: [ "Email is already in use." ]});
-
-            mockAuthService.register.mockRejectedValue(conflictError);
+            mockAuthService.register.mockRejectedValue(genericError);
 
             await authController.register(req, res, next);
 
-            expect(next).toHaveBeenCalledWith(conflictError);
+            expectNextError(next, res);
         });
 
         it("should call next with error if token generation fails", async () => {
@@ -89,15 +81,14 @@ describe("AuthController", () => {
 
             const mockUser = createTestUser();
             const mockProfileResponse = createProfileResponse();
-            const serverError = new EndpointError(500, "Internal Server Configuration Error.");
 
             mockAuthService.register.mockResolvedValue(mockUser);
-            mockTokenService.generateTokens.mockRejectedValue(serverError);
+            mockTokenService.generateTokens.mockRejectedValue(genericError);
             mockProfileService.getProfile.mockResolvedValue(mockProfileResponse);
 
             await authController.register(req, res, next);
 
-            expect(next).toHaveBeenCalledWith(serverError);
+            expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
@@ -109,15 +100,14 @@ describe("AuthController", () => {
             }) as ProtectedRequest;
 
             const mockUser = createTestUser();
-            const notFoundError = new EndpointError(404, "Profile not found.");
 
             mockAuthService.register.mockResolvedValue(mockUser);
             mockTokenService.generateTokens.mockResolvedValue(TEST_TOKENS);
-            mockProfileService.getProfile.mockRejectedValue(notFoundError);
+            mockProfileService.getProfile.mockRejectedValue(genericError);
 
             await authController.register(req, res, next);
 
-            expect(next).toHaveBeenCalledWith(notFoundError);
+            expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
@@ -160,14 +150,13 @@ describe("AuthController", () => {
             }) as ProtectedRequest;
 
             const mockProfileResponse = createProfileResponse();
-            const serverError = new EndpointError(500, "Internal Server Configuration Error.");
             
-            mockTokenService.generateTokens.mockRejectedValue(serverError);
+            mockTokenService.generateTokens.mockRejectedValue(genericError);
             mockProfileService.getProfile.mockResolvedValue(mockProfileResponse);
 
             await authController.login(req, res, next);
 
-            expect(next).toHaveBeenCalledWith(serverError);
+            expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
@@ -178,13 +167,12 @@ describe("AuthController", () => {
                 user: createTestUser()
             }) as ProtectedRequest;
 
-            const notFoundError = new EndpointError(404, "Profile not found.");
             mockTokenService.generateTokens.mockResolvedValue(TEST_TOKENS);
-            mockProfileService.getProfile.mockRejectedValue(notFoundError);
+            mockProfileService.getProfile.mockRejectedValue(genericError);
 
             await authController.login(req, res, next);
 
-            expect(next).toHaveBeenCalledWith(notFoundError);
+            expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
@@ -231,7 +219,7 @@ describe("AuthController", () => {
             expectClearedToken(cookies);
         });
 
-        it("should handle server error when logging out", async () => {
+        it("should pass service errors to next", async () => {
             const { refreshToken } = TEST_TOKENS;
             const req = createRequest({
                 method: "POST",
@@ -240,8 +228,7 @@ describe("AuthController", () => {
                 }
             });
 
-            const serverError = new EndpointError(500, "Server error during logout.");
-            mockTokenService.removeToken.mockRejectedValue(serverError);
+            mockTokenService.removeToken.mockRejectedValue(genericError);
 
             await authController.logout(req, res, next);
 
@@ -249,7 +236,7 @@ describe("AuthController", () => {
                 refreshToken
             });
 
-            expect(next).toHaveBeenCalledWith(serverError);
+            expectNextError(next, res);
         });
 
         it("should do nothing if the refresh token is not found in the DB (Stale Cookie)", async () => {
@@ -307,14 +294,13 @@ describe("AuthController", () => {
                 }
             });
 
-            const serverError = new EndpointError(500, "Server error during token refresh.");
-            mockTokenService.refresh.mockRejectedValue(serverError);
+            mockTokenService.refresh.mockRejectedValue(genericError);
 
             await authController.refreshTokens(req, res, next);
 
             expect(mockTokenService.refresh).toHaveBeenCalledWith({ refreshToken });
 
-            expect(next).toHaveBeenCalledWith(serverError);
+            expectNextError(next, res);
         });
 
         it("should call next with error if the refresh token is not in req.cookies", async () => {
@@ -323,14 +309,13 @@ describe("AuthController", () => {
                 cookies: {}
             });
 
-            const tokenError = new EndpointError(400, "Refresh token is required.");
-            mockTokenService.refresh.mockRejectedValue(tokenError);
+            mockTokenService.refresh.mockRejectedValue(genericError);
 
             await authController.refreshTokens(req, res, next);
 
             expect(mockTokenService.refresh).toHaveBeenCalledWith({});
 
-            expect(next).toHaveBeenCalledWith(tokenError);
+            expectNextError(next, res);
         });
     });
 });

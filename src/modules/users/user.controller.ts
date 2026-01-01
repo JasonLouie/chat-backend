@@ -24,7 +24,7 @@ export class UserController {
     }
 
     /**
-     * PUT /api/users/username
+     * PATCH /api/users/username
      */
     public updateUsername = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -38,7 +38,7 @@ export class UserController {
     }
 
     /**
-     * PUT /api/users/password
+     * PATCH /api/users/password
      */
     public updatePassword = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
@@ -52,7 +52,7 @@ export class UserController {
     }
 
     /**
-     * PUT /api/users/email
+     * PATCH /api/users/email
      */
     public updateEmail = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {

@@ -3,13 +3,16 @@ import type { Response } from "express";
 import type { MockResponse, ResponseCookie } from "node-mocks-http";
 import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
 import { TEST_TOKENS } from "../fixtures/user.fixture.js";
+import type { EndpointError } from "../../src/common/errors/EndpointError.js";
 
 type TokenType = "accessToken" | "refreshToken";
+
+export const genericError = new Error("Something went wrong!");
 
 export const expectTokens = (cookies: Record<string, ResponseCookie>, tokens: Tokens = TEST_TOKENS) => {
     expect(cookies.accessToken?.value).toBe(tokens.accessToken);
     expect(cookies.refreshToken?.value).toBe(tokens.refreshToken);
-}
+};
 
 export const expectClearedToken = (cookies: Record<string, ResponseCookie>, tokenType?: TokenType) => {
     const tokens = tokenType !== undefined ? [tokenType] : ["accessToken", "refreshToken"]; 
@@ -28,4 +31,10 @@ export const expectStatus204 = (res: MockResponse<Response>) => {
 
     // Body is set to "No Content" internally in the mock
     expect(res._getData()).toBe("No Content");
-}
+};
+
+export const expectNextError = (next: jest.Mock, res: MockResponse<Response>, expectedError: Error = genericError) => {
+    expect(next).toHaveBeenCalledWith(expectedError);
+
+    expect(res._isEndCalled()).toBeFalsy();
+};

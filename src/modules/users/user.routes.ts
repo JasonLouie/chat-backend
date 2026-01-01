@@ -12,11 +12,11 @@ export function createUserRoutes(userController: UserController, profileControll
     // Access the settings dashboard (user's email)
     router.get("/me", handle(userController.getMe));
 
-    router.put("/username", validationMiddleware(ModifyUsernameDto , "body"), handle(userController.updateUsername));
+    router.patch("/username", validationMiddleware(ModifyUsernameDto , "body"), handle(userController.updateUsername));
 
-    router.put("/password", validationMiddleware(ModifyPasswordDto , "body"), handle(userController.updatePassword));
+    router.patch("/password", validationMiddleware(ModifyPasswordDto , "body"), handle(userController.updatePassword));
 
-    router.put("/email", validationMiddleware(ModifyEmailDto , "body"), handle(userController.updateEmail));
+    router.patch("/email", validationMiddleware(ModifyEmailDto , "body"), handle(userController.updateEmail));
 
     // Handle profile routes
     router.use("/", createProfileRoutes(profileController));
