@@ -13,7 +13,8 @@ export const TEST_IMAGE_URL = "https://cloudinary.com/dummy.jpg";
 export const TEST_DISPLAY_NAME = "Test User";
 export const TEST_STATUS = UserStatus.OFFLINE;
 
-export const TEST_TOKENS: Tokens = { accessToken: "abc", refreshToken: "xyz"};
+export const OLD_TOKENS = { accessToken: "efg", refreshToken: "uvw"};
+export const TEST_TOKENS = { accessToken: "abc", refreshToken: "xyz"};
 
 export const UPDATED_USERNAME = "newusername";
 export const UPDATED_EMAIL = "new@example.com";
