@@ -1,4 +1,4 @@
-import { TEST_EMAIL, TEST_PASSWORD, TEST_USERNAME } from "../../../fixtures/user.fixture.js";
+import { TEST_EMAIL, TEST_PASSWORD, TEST_USERNAME } from "./user.fixture.js";
 
 export const AUTH_BODY = {
     REGISTER: {

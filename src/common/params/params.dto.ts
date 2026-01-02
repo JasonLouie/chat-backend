@@ -1,6 +1,6 @@
 import { IsUUID } from "class-validator";
 
-export class ProfileParamsDto {
+export class UserParamsDto {
     @IsUUID("4")
     userId!: string;
 }

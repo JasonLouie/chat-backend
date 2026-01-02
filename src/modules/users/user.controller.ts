@@ -1,23 +1,23 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { UserService } from "./user.service.js";
 import { clearAuthCookies } from "../../common/utils/cookie.utils.js";
-import type { ProtectedRequest } from "../../common/types/express.types.js";
+import { requireUser } from "../../common/utils/guard.js";
+import type { UpdateEmailDto, UpdatePasswordDto, UpdateUsernameDto } from "./user.dto.js";
 
 export class UserController {
-    private userService: UserService;
-
-    constructor(userService: UserService) {
-        this.userService = userService;
-    }
+    constructor(
+        private userService: UserService
+    ) {}
 
     /**
      * GET /api/users/me
      */
-    public getMe = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
-            const user = await this.userService.getUserFull(userId);
-            res.json(user);
+            const user = requireUser(req);
+
+            const fullUser = await this.userService.getUserFull(user.id);
+            res.json(fullUser);
         } catch (err) {
             next(err);
         }
@@ -26,11 +26,12 @@ export class UserController {
     /**
      * PATCH /api/users/username
      */
-    public updateUsername = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public updateUsername = async (req: Request<{}, {}, UpdateUsernameDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { newUsername } = req.body;
-            await this.userService.updateUsername(userId, newUsername);
+
+            await this.userService.updateUsername(user.id, newUsername);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -40,11 +41,12 @@ export class UserController {
     /**
      * PATCH /api/users/password
      */
-    public updatePassword = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public updatePassword = async (req: Request<{}, {}, UpdatePasswordDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { oldPassword, newPassword } = req.body;
-            await this.userService.updatePassword(userId, oldPassword, newPassword);
+
+            await this.userService.updatePassword(user.id, oldPassword, newPassword);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -54,11 +56,12 @@ export class UserController {
     /**
      * PATCH /api/users/email
      */
-    public updateEmail = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public updateEmail = async (req: Request<{}, {}, UpdateEmailDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { newEmail, password } = req.body;
-            await this.userService.updateEmail(userId, newEmail, password);
+
+            await this.userService.updateEmail(user.id, newEmail, password);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -68,10 +71,11 @@ export class UserController {
     /**
      * DELETE /api/users
      */
-    public deleteUser = async (req: ProtectedRequest, res: Response, next: NextFunction) : Promise<void> => {
+    public deleteUser = async (req: Request, res: Response, next: NextFunction) : Promise<void> => {
         try {
-            const userId = req.user.id;
-            await this.userService.deleteUser(userId);
+            const user = requireUser(req);
+
+            await this.userService.deleteUser(user.id);
             clearAuthCookies(res);
             res.sendStatus(204);
         } catch (err) {

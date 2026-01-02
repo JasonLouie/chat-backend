@@ -2,7 +2,7 @@ import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { AppDataSource } from "../../../db/data-source.js";
 import { Profile } from "./profile.entity.js";
 import type { UUID } from "../../../common/types/common.js";
-import type { ProfileResponse } from "./profile.types.js";
+import type { ModifyProfileUpdates, ProfileResponse } from "./profile.types.js";
 
 export class ProfileService {
     private profileRepo = AppDataSource.getRepository(Profile);
@@ -43,7 +43,7 @@ export class ProfileService {
     /**
      * Modify bio or displayName
      */
-    public modifyProfile = async (userId: UUID, updates: Partial<Profile>): Promise<void> => {
+    public modifyProfile = async (userId: UUID, updates: ModifyProfileUpdates | {}): Promise<void> => {
         // Do not run DB query if there are no updates
         if (Object.keys(updates).length === 0) return;
 

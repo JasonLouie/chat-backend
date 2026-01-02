@@ -4,7 +4,7 @@ import { ModifyProfileDto } from "./profile.dto.js";
 import { validationMiddleware } from "../../../common/middleware/validation.middleware.js";
 import { handle } from "../../../common/utils/route.utils.js";
 import { upload } from "../../../common/middleware/upload.middleware.js";
-import { ProfileParamsDto } from "../../../common/params/params.dto.js";
+import { UserParamsDto } from "../../../common/params/params.dto.js";
 
 export function createProfileRoutes(profileController: ProfileController) {
     const router = Router();
@@ -15,7 +15,7 @@ export function createProfileRoutes(profileController: ProfileController) {
 
     router.post("/me/profile/upload-avatar", upload.single("avatar"), handle(profileController.updateProfilePicture));
 
-    router.get("/:userId/profile", validationMiddleware(ProfileParamsDto, "params"), handle(profileController.getUserProfile));
+    router.get("/:userId/profile", validationMiddleware(UserParamsDto, "params"), handle(profileController.getUserProfile));
 
     return router;
 }

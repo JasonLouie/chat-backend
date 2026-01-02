@@ -1,34 +1,35 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
-import { type Response } from "express";
+import type { Request, Response } from "express";
 import { UserController } from "../../../../src/modules/users/user.controller.js";
-import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
+import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { mockUserService, resetServiceMocks } from "../../../mocks/services.mock.js";
-import type { ProtectedRequest } from "../../../../src/common/types/express.types.js";
 import { createTestUser } from "../../../fixtures/user.fixture.js";
 import { USER_BODY } from "./user.constants.js";
 import { expectNextError, expectStatus204, genericError } from "../../../utils/testHelpers.js";
+import type { User } from "../../../../src/modules/users/user.entity.js";
 
 describe("UserController", () => {
     let userController: UserController;
+    let req: MockRequest<Request>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
+    let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
 
         userController = new UserController(mockUserService);
 
+        mockUser = createTestUser();
+        req = createRequest({
+            user: mockUser
+        });
         res = createResponse();
         next = jest.fn();
     });
 
     describe("getMe", () => {
         it("should return 200, id, username, and email", async () => {
-            const mockUser = createTestUser(true);
-            const req = createRequest({
-                user: { id: mockUser.id }
-            }) as ProtectedRequest;
-
             mockUserService.getUserFull.mockResolvedValue(mockUser);
 
             await userController.getMe(req, res, next);
@@ -41,11 +42,6 @@ describe("UserController", () => {
         });
 
         it("should call next with error if user is not found", async () => {
-            const mockUser = createTestUser(true);
-            const req = createRequest({
-                user: { id: mockUser.id }
-            }) as ProtectedRequest;
-
             mockUserService.getUserFull.mockRejectedValue(genericError);
 
             await userController.getMe(req, res, next);
@@ -58,13 +54,10 @@ describe("UserController", () => {
 
     describe("updateUsername", () => {
         it("should return 204 No Content", async () => {
-            const mockUser = createTestUser();
             const { newUsername } = USER_BODY.USERNAME;
-            const req = createRequest({
-                method: "PATCH",
-                body: { newUsername },
-                user: mockUser
-            }) as ProtectedRequest;
+
+            req.method = "PATCH";
+            req.body = { newUsername };
 
             mockUserService.updateUsername.mockResolvedValue(undefined);
 
@@ -76,13 +69,12 @@ describe("UserController", () => {
         });
 
         it("should pass service errors to next", async () => {
-            const mockUser = createTestUser();
             const { newUsername } = USER_BODY.USERNAME;
-            const req = createRequest({
-                method: "PATCH",
-                body: { newUsername },
-                user: mockUser
-            }) as ProtectedRequest;
+            
+            req.method = "PATCH";
+            req.body = {
+                newUsername
+            };
 
             mockUserService.updateUsername.mockRejectedValue(genericError);
 
@@ -96,28 +88,103 @@ describe("UserController", () => {
 
     describe("updatePassword", () => {
         it("should return 204 No Content", async () => {
-            const req = createRequest({
-                method: "PATCH",
-                body: { ...USER_BODY.PASSWORD }
-            }) as ProtectedRequest;
+            const { oldPassword, newPassword } = USER_BODY.PASSWORD;
+            
+            req.method = "PATCH";
+            req.body = {
+                oldPassword,
+                newPassword
+            };
+
+            mockUserService.updatePassword.mockResolvedValue(undefined);
+
+            await userController.updatePassword(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockUserService.updatePassword).toHaveBeenCalledWith(mockUser.id, oldPassword, newPassword);
+        });
+
+        it("should pass service errors to next", async () => {
             const { oldPassword, newPassword } = USER_BODY.PASSWORD;
 
-        });
+            req.method = "PATCH";
+            req.body = {
+                oldPassword,
+                newPassword
+            };
 
-        it("", async () => {
+            mockUserService.updatePassword.mockRejectedValue(genericError);
 
-        });
+            await userController.updatePassword(req, res, next);
 
-        it("", async () => {
-
+            expect(mockUserService.updatePassword).toHaveBeenCalledWith(mockUser.id, oldPassword, newPassword);
+            
+            expectNextError(next, res);
         });
     });
 
     describe("updateEmail", () => {
-        it("should return 204 No Content", async () => {});
+        it("should return 204 No Content", async () => {
+            const { newEmail, password } = USER_BODY.EMAIL;
+            
+            req.method = "PATCH";
+            req.body = {
+                newEmail,
+                password
+            };
+
+            mockUserService.updateEmail.mockResolvedValue(undefined);
+
+            await userController.updateEmail(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockUserService.updateEmail).toHaveBeenCalledWith(mockUser.id, newEmail, password);
+        });
+
+        it("should pass service errors to next", async () => {
+            const { newEmail, password } = USER_BODY.EMAIL;
+
+            req.method = "PATCH";
+            req.body = {
+                newEmail,
+                password
+            };
+
+            mockUserService.updateEmail.mockRejectedValue(genericError);
+
+            await userController.updateEmail(req, res, next);
+
+            expect(mockUserService.updateEmail).toHaveBeenCalledWith(mockUser.id, newEmail, password);
+
+            expectNextError(next, res);
+        });
     });
 
     describe("deleteUser", () => {
-        it("should return 204 No Content", async () => {});
+        it("should return 204 No Content", async () => {
+            req.method = "DELETE";
+
+            mockUserService.deleteUser.mockResolvedValue(undefined);
+
+            await userController.deleteUser(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+        });
+
+        it("should pass service errors to next", async () => {
+            req.method = "DELETE";
+
+            mockUserService.deleteUser.mockRejectedValue(genericError);
+
+            await userController.deleteUser(req, res, next);
+
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+
+            expectNextError(next, res);
+        });
     });
 });

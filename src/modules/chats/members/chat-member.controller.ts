@@ -1,10 +1,10 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { ChatMemberService } from "./chat-member.service.js";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
-import type { ProtectedRequest } from "../../../common/types/express.types.js";
 import { ChatRole } from "../chat.types.js";
-import type { ChatMemberParams, ChatParams } from "../../../common/params/params.types.js";
-import type { UpdateMemberBody } from "./chat-member.types.js";
+import { requireUser } from "../../../common/utils/guard.js";
+import type { ChatParamsDto, MemberParamsDto } from "../../../common/params/params.dto.js";
+import type { UpdateMemberDto } from "./chat-member.dto.js";
 
 export class ChatMemberController {
     constructor(
@@ -14,12 +14,12 @@ export class ChatMemberController {
     /**
      * GET /api/chats/:chatId/members 
      */
-    public getMembers = async (req: ProtectedRequest<ChatParams>, res: Response, next: NextFunction): Promise<void> => {
+    public getMembers = async (req: Request<ChatParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { chatId } = req.params;
             
-            const members = await this.chatMemberService.getChatMembers(chatId, userId);
+            const members = await this.chatMemberService.getChatMembers(chatId, user.id);
             res.json(members);
         } catch (err) {
             next(err);
@@ -29,15 +29,15 @@ export class ChatMemberController {
     /**
      * DELETE /api/chats/:chatId/members/:memberId
      */
-    public deleteMember = async (req: ProtectedRequest<ChatMemberParams>, res: Response, next: NextFunction): Promise<void> => {
+    public deleteMember = async (req: Request<MemberParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            const user = requireUser(req);
             const { chatId, memberId } = req.params;
-            const userId = req.user.id;
 
-            if (memberId === userId) {
-                await this.chatMemberService.leaveChat(chatId, userId);
+            if (memberId === user.id) {
+                await this.chatMemberService.leaveChat(chatId, user.id);
             } else {
-                await this.chatMemberService.removeMember(chatId, userId, memberId);
+                await this.chatMemberService.removeMember(chatId, user.id, memberId);
             }
             res.sendStatus(204);
         } catch (err) {
@@ -48,12 +48,12 @@ export class ChatMemberController {
     /**
      * POST /api/chats/:chatId/members/:memberId
      */
-    public addMember = async (req: ProtectedRequest<ChatMemberParams>, res: Response, next: NextFunction): Promise<void> => {
+    public addMember = async (req: Request<MemberParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            const user = requireUser(req);
             const { chatId, memberId } = req.params;
-            const userId = req.user.id;
 
-            const member = await this.chatMemberService.addMember(chatId, userId, memberId);
+            const member = await this.chatMemberService.addMember(chatId, user.id, memberId);
             res.status(201).json(member);
         } catch (err) {
             next(err);
@@ -63,14 +63,14 @@ export class ChatMemberController {
     /**
      * PATCH /api/chats/:chatId/:memberId
      */
-    public updateMember = async (req: ProtectedRequest<ChatMemberParams, any, UpdateMemberBody>, res: Response, next: NextFunction): Promise<void> => {
+    public updateMember = async (req: Request<MemberParamsDto, {}, UpdateMemberDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            const user = requireUser(req);
             const { chatId, memberId } = req.params;
-            const userId = req.user.id;
             const { role } = req.body;
 
             if (role === ChatRole.OWNER) {
-                await this.chatMemberService.transferOwnership(chatId, userId, memberId);
+                await this.chatMemberService.transferOwnership(chatId, user.id, memberId);
                 res.sendStatus(204);
             }
             

@@ -1,11 +1,10 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { ProfileService } from "./profile.service.js";
-import type { UserParams } from "../../../common/params/params.types.js";
-import type { ProtectedRequest } from "../../../common/types/express.types.js";
-import type { ModifyProfileBody } from "./profile.types.js";
 import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
-import { EndpointError } from "../../../common/errors/EndpointError.js";
+import { requireFile, requireUser } from "../../../common/utils/guard.js";
+import type { ModifyProfileDto } from "./profile.dto.js";
+import type { UserParamsDto } from "../../../common/params/params.dto.js";
 
 export class ProfileController {
     constructor(
@@ -15,10 +14,11 @@ export class ProfileController {
     /**
      * GET /api/users/me/profile
      */
-    public getMyProfile = async(req: ProtectedRequest<UserParams>, res: Response, next: NextFunction): Promise<void> => {
+    public getMyProfile = async(req: Request<UserParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
-            const profile = await this.profileService.getProfile(userId);
+            const user = requireUser(req);
+
+            const profile = await this.profileService.getProfile(user.id);
             res.json(profile);
         } catch (err) {
             next(err);
@@ -28,8 +28,10 @@ export class ProfileController {
     /**
      * GET /api/users/:userId/profile
      */
-    public getUserProfile = async(req: ProtectedRequest<UserParams>, res: Response, next: NextFunction): Promise<void> => {
+    public getUserProfile = async(req: Request<UserParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            requireUser(req);
+
             const { userId } = req.params;
             const profile = await this.profileService.getProfile(userId);
             res.json(profile);
@@ -41,17 +43,12 @@ export class ProfileController {
     /**
      * PATCH /api/users/me/profile - Modify bio or display name
      */
-    public modifyProfile = async(req: ProtectedRequest<any, any, ModifyProfileBody>, res: Response, next: NextFunction): Promise<void> => {
+    public modifyProfile = async(req: Request<{}, {}, ModifyProfileDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { newBio, newDisplayName } = req.body;
-            const updates = {
-                ...(newBio !== undefined && { bio: newBio }),
-                ...(newDisplayName !== undefined && { displayName: newDisplayName }),
-            }
-            if (Object.keys(updates).length > 0){
-                await this.profileService.modifyProfile(userId, updates);
-            }
+            
+            await this.profileService.modifyProfile(user.id, { bio: newBio, displayName: newDisplayName });
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -61,13 +58,13 @@ export class ProfileController {
     /**
      * POST /api/users/me/profile/upload-avatar
      */
-    public updateProfilePicture = async(req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public updateProfilePicture = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.file) throw new EndpointError(400, "No file uploaded.");
+            const user = requireUser(req);
+            const file = requireFile(req);
 
-            const imageUrl = await uploadToCloudinary(req.file.buffer, ImageFolder.USER);
-            const userId = req.user.id;
-            await this.profileService.modifyProfile(userId, { imageUrl });
+            const imageUrl = await uploadToCloudinary(file.buffer, ImageFolder.USER);
+            await this.profileService.modifyProfile(user.id, { imageUrl });
             res.sendStatus(204);
         } catch (err) {
             next(err);

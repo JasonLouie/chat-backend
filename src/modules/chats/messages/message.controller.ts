@@ -1,11 +1,11 @@
-import type { Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { MessageService } from "./message.service.js";
-import type { ChatParams, MessageParams } from "../../../common/params/params.types.js";
-import { MessageType, type GetMessagesQuery, type PinMessageBody, type SearchMessagesQuery, type SendMessageBody, type UpdateMessageBody } from "./message.types.js";
-import type { ProtectedRequest } from "../../../common/types/express.types.js";
-import { EndpointError } from "../../../common/errors/EndpointError.js";
+import { MessageType } from "./message.types.js";
 import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
+import type { ChatParamsDto, MessageParamsDto } from "../../../common/params/params.dto.js";
+import type { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendMessageDto, UpdateMessageDto } from "./messages.dto.js";
+import { requireFile, requireUser } from "../../../common/utils/guard.js";
 
 export class MessageController{
     private messageService: MessageService;
@@ -17,15 +17,15 @@ export class MessageController{
     /**
      * GET /api/chats/:chatId/messages
      */
-    public getMessages = async (req: ProtectedRequest<ChatParams, any, any, GetMessagesQuery>, res: Response, next: NextFunction): Promise<void> => {
+    public getMessages = async (req: Request<ChatParamsDto, {}, {}, GetMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId } = req.params;
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { cursor, limit } = req.query;
 
             const messages = await this.messageService.searchMessages(
                 chatId,
-                userId,
+                user.id,
                 {
                     beforeDate: cursor,
                     limit
@@ -40,13 +40,13 @@ export class MessageController{
     /**
      * GET /api/chats/:chatId/messages/search
      */
-    public searchMessages = async (req: ProtectedRequest<ChatParams, any, any, SearchMessagesQuery>, res: Response, next: NextFunction): Promise<void> => {
+    public searchMessages = async (req: Request<ChatParamsDto, {}, {}, SearchMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId } = req.params;
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { keyword, type, beforeDate, afterDate, pinned, limit } = req.query;
             
-            const messages = await this.messageService.searchMessages(chatId, userId, { keyword, type, beforeDate, afterDate, pinned, limit });
+            const messages = await this.messageService.searchMessages(chatId, user.id, { keyword, type, beforeDate, afterDate, pinned, limit });
             res.json(messages);
         } catch (err) {
             next(err);
@@ -56,19 +56,19 @@ export class MessageController{
     /**
      * POST /api/chats/:chatId/messages
      */
-    public sendMessage = async (req: ProtectedRequest<ChatParams, any, SendMessageBody>, res: Response, next: NextFunction): Promise<void> => {
+    public sendMessage = async (req: Request<ChatParamsDto, {}, SendMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { type } = req.body;
             let content = req.body.content;
             if (type === MessageType.IMAGE) {
-                if (!req.file) throw new EndpointError(400, "No file uploaded.");
-                content = await uploadToCloudinary(req.file.buffer, ImageFolder.MESSAGE);
+                const file = requireFile(req);
+                content = await uploadToCloudinary(file.buffer, ImageFolder.MESSAGE);
             }
 
             const { chatId } = req.params;
-            const userId = req.user.id;
+            const user = requireUser(req);
 
-            const message = await this.messageService.sendMessage(chatId, userId, content, type);
+            const message = await this.messageService.sendMessage(chatId, user.id, content, type);
             res.status(201).json(message);
         } catch (err) {
             next(err);
@@ -78,13 +78,13 @@ export class MessageController{
     /**
      * PATCH /api/chats/:chatId/messages/:messageId
      */
-    public updateMessage = async (req: ProtectedRequest<MessageParams, any, UpdateMessageBody>, res: Response, next: NextFunction): Promise<void> => {
+    public updateMessage = async (req: Request<MessageParamsDto, {}, UpdateMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId, messageId } = req.params;
-            const userId = req.user.id;
+            const user = requireUser(req);
             const { content } = req.body;
 
-            await this.messageService.updateMessage(messageId, chatId, userId, content);
+            await this.messageService.updateMessage(messageId, chatId, user.id, content);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -94,12 +94,13 @@ export class MessageController{
     /**
      * PATCH /api/chats/:chatId/messages/:messageId/pin
      */
-    public pinMessage = async (req: ProtectedRequest<MessageParams, any, PinMessageBody>, res: Response, next: NextFunction): Promise<void> => {
+    public pinMessage = async (req: Request<MessageParamsDto, {}, PinMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            const user = requireUser(req);
             const { chatId, messageId } = req.params;
-            const userId = req.user.id;
             const { pinned } = req.body;
-            await this.messageService.pinMessage(messageId, chatId, userId, pinned as boolean);
+
+            await this.messageService.pinMessage(messageId, chatId, user.id, pinned as boolean);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -109,11 +110,12 @@ export class MessageController{
     /**
      * DELETE /api/chats/:chatId/messages/:messageId
      */
-    public deleteMessage = async (req: ProtectedRequest<MessageParams>, res: Response, next: NextFunction): Promise<void> => {
+    public deleteMessage = async (req: Request<MessageParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
+            const user = requireUser(req);
             const { chatId, messageId } = req.params;
-            const userId = req.user.id;
-            await this.messageService.deleteMessage(messageId, chatId, userId);
+
+            await this.messageService.deleteMessage(messageId, chatId, user.id);
             res.sendStatus(204);
         } catch (err) {
             next(err);

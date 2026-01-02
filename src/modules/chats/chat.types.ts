@@ -7,3 +7,8 @@ export enum ChatType {
     DM = "dm",
     GROUP = "group"
 }
+
+export interface ModifyChatGroup {
+    imageUrl?: string;
+    name?: string;
+}

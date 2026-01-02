@@ -5,8 +5,8 @@ import { AuthController } from "../../../../src/modules/auth/auth.controller.js"
 import { mockAuthService, mockProfileService, mockTokenService, resetServiceMocks } from "../../../mocks/services.mock.js";
 import { createProfileResponse, createTestUser, OLD_TOKENS, TEST_TOKENS } from "../../../fixtures/user.fixture.js";
 import type { ProtectedRequest } from '../../../../src/common/types/express.types.js';
-import { AUTH_BODY } from './auth.constants.js';
 import { expectClearedToken, expectNextError, expectStatus204, expectTokens, genericError } from "../../../utils/testHelpers.js";
+import { AUTH_BODY } from "../../../fixtures/auth.fixture.js";
 
 describe("AuthController", () => {
     let authController: AuthController;
@@ -239,7 +239,7 @@ describe("AuthController", () => {
             expectNextError(next, res);
         });
 
-        it("should do nothing if the refresh token is not found in the DB (Stale Cookie)", async () => {
+        it("should return 204 No Content and clear authentication cookies if the refresh token is not found in the DB (Stale Cookie)", async () => {
             const { refreshToken } = TEST_TOKENS;
             const req = createRequest({
                 method: "POST",

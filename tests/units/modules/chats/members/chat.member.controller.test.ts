@@ -1,13 +1,19 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
 import { ChatMemberController } from "../../../../../src/modules/chats/members/chat-member.controller.js";
-import { createResponse, type MockResponse } from "node-mocks-http";
+import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { mockChatMemberService, resetServiceMocks } from "../../../../mocks/services.mock.js";
+import type { ProtectedRequest } from "../../../../../src/common/types/express.types.js";
+import type { User } from "../../../../../src/modules/users/user.entity.js";
+import { createTestUser } from "../../../../fixtures/user.fixture.js";
+import { TEST_CHAT_ID } from "../../../../fixtures/chat.fixture.js";
 
 describe("ChatMemberController", () => {
     let chatMemberController: ChatMemberController;
+    let req: MockRequest<ProtectedRequest>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
+    let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
@@ -16,6 +22,13 @@ describe("ChatMemberController", () => {
             mockChatMemberService
         );
 
+        mockUser = createTestUser();
+        req = createRequest({
+            user: mockUser,
+            params: {
+                chatId: TEST_CHAT_ID
+            }
+        });
         res = createResponse();
         next = jest.fn();
     });

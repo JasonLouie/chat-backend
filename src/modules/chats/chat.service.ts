@@ -3,7 +3,7 @@ import { AppDataSource } from "../../db/data-source.js";
 import { Chat } from "./chat.entity.js";
 import type { UUID } from "../../common/types/common.js";
 import { EndpointError } from "../../common/errors/EndpointError.js";
-import { ChatType } from "./chat.types.js";
+import { ChatType, type ModifyChatGroup } from "./chat.types.js";
 import { ChatMemberService } from "./members/chat-member.service.js";
 import { UserService } from "../users/user.service.js";
 
@@ -77,7 +77,7 @@ export class ChatService {
     /**
      * Modifies a chat group (name or imageUrl)
      */
-    public modifyChatGroup = async (chatId: UUID, userId: UUID, updates: Partial<Chat>): Promise<void> => {
+    public modifyChatGroup = async (chatId: UUID, userId: UUID, updates: ModifyChatGroup | {}): Promise<void> => {
         return await this.dataSource.transaction(async (manager) => {
             const { chat } = await this.chatMemberService.validateChatMembership(chatId, userId, true, manager);
 

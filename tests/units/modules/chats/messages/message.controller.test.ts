@@ -1,26 +1,33 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
-import { type Response } from "express";
-import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
+import type { Request, Response } from "express";
+import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { MessageController } from "../../../../../src/modules/chats/messages/message.controller.js";
 import { EndpointError } from "../../../../../src/common/errors/EndpointError.js";
-import { type ProtectedRequest } from "../../../../../src/common/types/express.types.js";
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
 import { MessageType } from '../../../../../src/modules/chats/messages/message.types.js';
+import type { User } from "../../../../../src/modules/users/user.entity.js";
+import { TEST_CHAT_ID } from "../../../../fixtures/chat.fixture.js";
 
 describe("MessageController", () => {
     let messageController: MessageController;
-    let req: Partial<ProtectedRequest>;
+    let req: Request<any, any, any, any>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
+    let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
 
-        // Inject Fake Service into the Real Controller
         messageController = new MessageController(mockMessageService);
 
-        req = { params: {}, body: {}, user: createTestUser() };
+        mockUser = createTestUser();
+        req = createRequest({
+            user: mockUser,
+            params: {
+                chatId: TEST_CHAT_ID
+            }
+        });
         res = createResponse();
         next = jest.fn();
     });
@@ -35,14 +42,8 @@ describe("MessageController", () => {
 
     describe("sendMessage", () => {
         it("should return 201 and the new message on success", async () => {
-            const req = createRequest({
-                method: "POST",
-                user: { id: "user-123" },
-                params: { chatId: "chat-abc" },
-                body: { content: "Hello World", type: MessageType.TEXT }
-            }) as ProtectedRequest;
-            const res = createResponse();
-            const next = jest.fn();
+            req.method = "POST";
+            req.body = { content: "Hello World", type: MessageType.TEXT };
 
             // Mock the service return value
             const mockResult = { id: "msg-1", content: "Hello World" };
@@ -53,8 +54,8 @@ describe("MessageController", () => {
 
             // Assert
             expect(mockMessageService.sendMessage).toHaveBeenCalledWith(
-                "chat-abc",
-                "user-123",
+                TEST_CHAT_ID,
+                mockUser.id,
                 "Hello World",
                 MessageType.TEXT
             );
@@ -63,11 +64,11 @@ describe("MessageController", () => {
         });
 
         it("should call next(err) if service throws an error", async () => {
-            const req = createRequest({
+            req = createRequest({
                 user: { id: "user-1" },
                 params: { chatId: "chat-1" },
                 body: { content: "Hi" }
-            }) as ProtectedRequest;
+            });
             const res = createResponse();
             const next = jest.fn();
 

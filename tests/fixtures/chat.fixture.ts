@@ -1,0 +1,1 @@
+export const TEST_CHAT_ID = "uuid-1234-5678-9101";

@@ -5,6 +5,7 @@ import { User } from "../../src/modules/users/user.entity.js";
 import { UserStatus } from "../../src/modules/users/user.types.js";
 
 export const TEST_USER_ID = "uuid-1234-5678";
+export const OTHER_USER_ID = "uuid-8765-4321";
 export const TEST_USERNAME = "testuser";
 export const TEST_EMAIL = "test@example.com";
 export const TEST_PASSWORD = "TestPass1234!";
@@ -46,11 +47,14 @@ export const createTestUser = (
     return Object.assign(user, overrides);
 };
 
-export const createProfileResponse = (): ProfileResponse => ({
-    id: TEST_USER_ID,
-    username: TEST_USERNAME,
-    displayName: TEST_DISPLAY_NAME,
-    imageUrl: TEST_IMAGE_URL,
-    bio: TEST_BIO,
-    status: TEST_STATUS
-});
+export const createProfileResponse = (overrides?: Partial<ProfileResponse>): ProfileResponse => {
+    const profileResponse = {
+        id: TEST_USER_ID,
+        username: TEST_USERNAME,
+        displayName: TEST_DISPLAY_NAME,
+        imageUrl: TEST_IMAGE_URL,
+        bio: TEST_BIO,
+        status: TEST_STATUS
+    }
+    return Object.assign(profileResponse, overrides);
+};

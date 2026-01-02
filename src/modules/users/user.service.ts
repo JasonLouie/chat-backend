@@ -54,16 +54,19 @@ export class UserService {
             const user = await this.findUserOrThrow(id);
             const isMatch = await user.comparePassword(oldPassword);
 
-            if (!isMatch)
+            if (!isMatch){
                 throw new EndpointError(400, {
                     password: ["Incorrect password."],
                 });
-            if (oldPassword === newPassword)
+            }
+            
+            if (oldPassword === newPassword){
                 throw new EndpointError(400, {
                     password: [
                         "New password cannot be the same as old password.",
                     ],
                 });
+            }
 
             user.password = newPassword;
             await manager.save(user);

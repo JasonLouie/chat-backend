@@ -1,9 +1,8 @@
-import { expect } from "@jest/globals";
-import type { Response } from "express";
-import type { MockResponse, ResponseCookie } from "node-mocks-http";
+import { jest, it, expect } from "@jest/globals";
+import type { Request, Response } from "express";
+import { createRequest, createResponse, type MockResponse, type ResponseCookie } from "node-mocks-http";
 import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
 import { TEST_TOKENS } from "../fixtures/user.fixture.js";
-import type { EndpointError } from "../../src/common/errors/EndpointError.js";
 
 type TokenType = "accessToken" | "refreshToken";
 
@@ -38,3 +37,19 @@ export const expectNextError = (next: jest.Mock, res: MockResponse<Response>, ex
 
     expect(res._isEndCalled()).toBeFalsy();
 };
+
+export const testRequiresUser = (
+    controllerMethod: (req: Request<any, any, any, any>, res: MockResponse<Response>, next: jest.Mock) => Promise<void>
+) => {
+    it("should call next with 401 if req.user is missing", async () => {
+        const req = createRequest();
+        const res = createResponse();
+        const next = jest.fn();
+
+        await controllerMethod(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(
+            expect.objectContaining({ status: 401 })
+        );
+    });
+}

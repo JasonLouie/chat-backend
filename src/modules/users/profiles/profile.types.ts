@@ -10,7 +10,7 @@ export interface ProfileResponse {
     bio: string | null;
 }
 
-export interface ModifyProfileBody {
-    newBio?: string | undefined;
-    newDisplayName?: string | undefined;
+export interface ModifyProfileUpdates {
+    bio?: string;
+    displayName?: string;
 }

@@ -3,7 +3,8 @@ import { AuthService } from "./auth.service.js";
 import { TokenService } from "./tokens/token.service.js";
 import { ProfileService } from "../users/profiles/profile.service.js";
 import { clearAuthCookies, sendAuthCookies } from "../../common/utils/cookie.utils.js";
-import type { ProtectedRequest } from "../../common/types/express.types.js";
+import { requireUser } from "../../common/utils/guard.js";
+import type { RegisterDto } from "./auth.dto.js";
 
 export class AuthController {
     constructor(
@@ -15,7 +16,7 @@ export class AuthController {
     /**
      * POST /api/auth/register
      */
-    public register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public register = async (req: Request<{}, {}, RegisterDto, {}>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { username, email, password } = req.body;
             const user = await this.authService.register(username, email, password);
@@ -33,12 +34,12 @@ export class AuthController {
     /**
      * POST /api/auth/login
      */
-    public login = async (req: ProtectedRequest, res: Response, next: NextFunction): Promise<void> => {
+    public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const userId = req.user.id;
+            const { id } = requireUser(req);
             const [tokens, fullProfile] = await Promise.all([
-                this.tokenService.generateTokens(userId),
-                this.profileService.getProfile(userId)
+                this.tokenService.generateTokens(id),
+                this.profileService.getProfile(id)
             ]);
             sendAuthCookies(tokens, res);
             res.json(fullProfile);
