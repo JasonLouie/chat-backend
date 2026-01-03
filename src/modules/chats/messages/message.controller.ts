@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { MessageService } from "./message.service.js";
 import { MessageType } from "./message.types.js";
 import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
@@ -6,6 +6,7 @@ import { ImageFolder } from "../../../common/types/common.js";
 import type { ChatParamsDto, MessageParamsDto } from "../../../common/params/params.dto.js";
 import type { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendMessageDto, UpdateMessageDto } from "./messages.dto.js";
 import { requireFile, requireUser } from "../../../common/utils/guard.js";
+import type { TypedRequest } from "../../../common/types/express.types.js";
 
 export class MessageController{
     private messageService: MessageService;
@@ -17,7 +18,7 @@ export class MessageController{
     /**
      * GET /api/chats/:chatId/messages
      */
-    public getMessages = async (req: Request<ChatParamsDto, {}, {}, GetMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
+    public getMessages = async (req: TypedRequest<ChatParamsDto, {}, {}, GetMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId } = req.params;
             const user = requireUser(req);
@@ -40,7 +41,7 @@ export class MessageController{
     /**
      * GET /api/chats/:chatId/messages/search
      */
-    public searchMessages = async (req: Request<ChatParamsDto, {}, {}, SearchMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
+    public searchMessages = async (req: TypedRequest<ChatParamsDto, {}, {}, SearchMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId } = req.params;
             const user = requireUser(req);
@@ -56,7 +57,7 @@ export class MessageController{
     /**
      * POST /api/chats/:chatId/messages
      */
-    public sendMessage = async (req: Request<ChatParamsDto, {}, SendMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public sendMessage = async (req: TypedRequest<ChatParamsDto, {}, SendMessageDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { type } = req.body;
             let content = req.body.content;
@@ -78,7 +79,7 @@ export class MessageController{
     /**
      * PATCH /api/chats/:chatId/messages/:messageId
      */
-    public updateMessage = async (req: Request<MessageParamsDto, {}, UpdateMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateMessage = async (req: TypedRequest<MessageParamsDto, {}, UpdateMessageDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { chatId, messageId } = req.params;
             const user = requireUser(req);
@@ -94,7 +95,7 @@ export class MessageController{
     /**
      * PATCH /api/chats/:chatId/messages/:messageId/pin
      */
-    public pinMessage = async (req: Request<MessageParamsDto, {}, PinMessageDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public pinMessage = async (req: TypedRequest<MessageParamsDto, {}, PinMessageDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId, messageId } = req.params;
@@ -110,7 +111,7 @@ export class MessageController{
     /**
      * DELETE /api/chats/:chatId/messages/:messageId
      */
-    public deleteMessage = async (req: Request<MessageParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public deleteMessage = async (req: TypedRequest<MessageParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId, messageId } = req.params;

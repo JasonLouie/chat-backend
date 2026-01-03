@@ -1,40 +1,39 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
 import { type Response } from "express";
-import { createRequest, createResponse, type MockResponse } from "node-mocks-http";
+import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { AuthController } from "../../../../src/modules/auth/auth.controller.js";
 import { mockAuthService, mockProfileService, mockTokenService, resetServiceMocks } from "../../../mocks/services.mock.js";
 import { createProfileResponse, createTestUser, OLD_TOKENS, TEST_TOKENS } from "../../../fixtures/user.fixture.js";
-import type { ProtectedRequest } from '../../../../src/common/types/express.types.js';
-import { expectClearedToken, expectNextError, expectStatus204, expectTokens, genericError } from "../../../utils/testHelpers.js";
+import { expectClearedToken, expectNextError, expectStatus204, expectTokens, genericError, testRequiresUser } from "../../../utils/testHelpers.js";
 import { AUTH_BODY } from "../../../fixtures/auth.fixture.js";
+import type { TypedRequest } from "../../../../src/common/types/express.types.js";
+import type { User } from "../../../../src/modules/users/user.entity.js";
 
 describe("AuthController", () => {
-    let authController: AuthController;
+    const authController = new AuthController(
+        mockAuthService,
+        mockProfileService,
+        mockTokenService
+    );
+    let req: MockRequest<TypedRequest>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
 
     beforeEach(() => {
         resetServiceMocks();
 
-        // Inject Fake Service into the Real Controller
-        authController = new AuthController(
-            mockAuthService,
-            mockProfileService,
-            mockTokenService
-        );
-
+        req = createRequest({
+            method: "POST"
+        });
         res = createResponse();
         next = jest.fn();
     });
 
     describe("register", () => {
         it("should register user, set cookies, and return full profile", async () => {
-            const req = createRequest({
-                method: "POST",
-                body: { ...AUTH_BODY.REGISTER }
-            });
-
             const { username, email, password } = AUTH_BODY.REGISTER;
+            req.body = { username, email, password };
+
             const mockUser = createTestUser();
             const mockProfileResponse = createProfileResponse();
 
@@ -61,23 +60,23 @@ describe("AuthController", () => {
         });
 
         it("should pass the error to next if registration fails", async () => {
-            const req = createRequest({
-                method: "POST",
-                body: { ...AUTH_BODY.REGISTER }
-            });
+            const { username, email, password } = AUTH_BODY.REGISTER;
+            req.body = { username, email, password };
 
             mockAuthService.register.mockRejectedValue(genericError);
 
             await authController.register(req, res, next);
 
+            expect(mockAuthService.register).toHaveBeenCalledWith(username, email, password);
+            
             expectNextError(next, res);
+
+            expect(res.cookies).toEqual({});
         });
 
         it("should call next with error if token generation fails", async () => {
-            const req = createRequest({
-                method: "POST",
-                body: { ...AUTH_BODY.REGISTER }
-            });
+            const { username, email, password } = AUTH_BODY.REGISTER;
+            req.body = { username, email, password };
 
             const mockUser = createTestUser();
             const mockProfileResponse = createProfileResponse();
@@ -88,16 +87,20 @@ describe("AuthController", () => {
 
             await authController.register(req, res, next);
 
+            expect(mockAuthService.register).toHaveBeenCalledWith(username, email, password);
+            
+            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
+            
+            expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
+            
             expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
 
         it("should handle cases where the user's profile cannot be found", async () => {
-            const req = createRequest({
-                method: "POST",
-                body: { ...AUTH_BODY.REGISTER }
-            }) as ProtectedRequest;
+            const { username, email, password } = AUTH_BODY.REGISTER;
+            req.body = { username, email, password };
 
             const mockUser = createTestUser();
 
@@ -107,6 +110,12 @@ describe("AuthController", () => {
 
             await authController.register(req, res, next);
 
+            expect(mockAuthService.register).toHaveBeenCalledWith(username, email, password);
+            
+            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
+            
+            expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
+            
             expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
@@ -114,12 +123,17 @@ describe("AuthController", () => {
     });
 
     describe("login", () => {
-        it("should set cookies and return full profile", async () => {
-            const req = createRequest({
-                method: "POST",
-                user: createTestUser()
-            }) as ProtectedRequest;
+        let mockUser: User;
 
+        beforeEach(() => {
+            mockUser = createTestUser();
+
+            req.user = mockUser;
+        });
+
+        testRequiresUser(authController.login);
+
+        it("should set cookies and return full profile", async () => {
             const mockProfileResponse = createProfileResponse();
 
             mockTokenService.generateTokens.mockResolvedValue(TEST_TOKENS);
@@ -129,13 +143,11 @@ describe("AuthController", () => {
 
             expect(res.statusCode).toBe(200);
 
-            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(req.user.id);
+            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
 
-            expect(mockProfileService.getProfile).toHaveBeenCalledWith(req.user.id);
+            expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
 
-            expect(res._getJSONData()).toEqual(expect.objectContaining({
-                ...mockProfileResponse
-            }));
+            expect(res._getJSONData()).toEqual(mockProfileResponse);
 
             // Check cookies
             const cookies = res.cookies;
@@ -144,11 +156,6 @@ describe("AuthController", () => {
         });
 
         it("should call next with error if token generation fails", async () => {
-            const req = createRequest({
-                method: "POST",
-                user: createTestUser()
-            }) as ProtectedRequest;
-
             const mockProfileResponse = createProfileResponse();
             
             mockTokenService.generateTokens.mockRejectedValue(genericError);
@@ -156,22 +163,25 @@ describe("AuthController", () => {
 
             await authController.login(req, res, next);
 
+            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
+            
+            expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
+            
             expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
         });
 
         it("should handle cases where the user's profile cannot be found", async () => {
-            const req = createRequest({
-                method: "POST",
-                user: createTestUser()
-            }) as ProtectedRequest;
-
             mockTokenService.generateTokens.mockResolvedValue(TEST_TOKENS);
             mockProfileService.getProfile.mockRejectedValue(genericError);
 
             await authController.login(req, res, next);
 
+            expect(mockTokenService.generateTokens).toHaveBeenCalledWith(mockUser.id);
+
+            expect(mockProfileService.getProfile).toHaveBeenCalledWith(mockUser.id);
+            
             expectNextError(next, res);
 
             expect(res.cookies).toEqual({});
@@ -181,16 +191,13 @@ describe("AuthController", () => {
     describe("logout", () => {
         it("should return 204 No Content and clear authentication cookies", async () => {
             const { refreshToken } = TEST_TOKENS;
-            const req = createRequest({
-                method: "POST",
-                cookies: {
-                    refreshToken
-                },
-            });
+            req.cookies = { refreshToken };
 
             await authController.logout(req, res, next);
             
             expectStatus204(res);
+
+            mockTokenService.removeToken.mockResolvedValue(undefined);
 
             expect(mockTokenService.removeToken).toHaveBeenCalledWith({
                 refreshToken
@@ -203,13 +210,11 @@ describe("AuthController", () => {
         });
 
         it("should return 204 No Content and clear authentication cookies without any cookies", async () => {
-            const req = createRequest({
-                method: "POST"
-            });
-
             await authController.logout(req, res, next);
             
             expectStatus204(res);
+
+            mockTokenService.removeToken.mockResolvedValue(undefined);
 
             expect(mockTokenService.removeToken).toHaveBeenCalledWith({});
 
@@ -221,12 +226,7 @@ describe("AuthController", () => {
 
         it("should pass service errors to next", async () => {
             const { refreshToken } = TEST_TOKENS;
-            const req = createRequest({
-                method: "POST",
-                cookies: {
-                    refreshToken
-                }
-            });
+            req.cookies = { refreshToken };
 
             mockTokenService.removeToken.mockRejectedValue(genericError);
 
@@ -238,38 +238,12 @@ describe("AuthController", () => {
 
             expectNextError(next, res);
         });
-
-        it("should return 204 No Content and clear authentication cookies if the refresh token is not found in the DB (Stale Cookie)", async () => {
-            const { refreshToken } = TEST_TOKENS;
-            const req = createRequest({
-                method: "POST",
-                cookies: {
-                    refreshToken
-                }
-            });
-
-            mockTokenService.removeToken.mockResolvedValue(undefined);
-
-            await authController.logout(req, res, next);
-
-            expectStatus204(res);
-
-            const cookies = res.cookies;
-
-            // Check if access and refresh tokens are cleared
-            expectClearedToken(cookies);
-        });
     });
 
     describe("refreshTokens", () => {
         it("should return 204 No Content and set authentication cookies", async () => {
             const { refreshToken } = OLD_TOKENS;
-            const req = createRequest({
-                method: "POST",
-                cookies: {
-                    refreshToken
-                }
-            });
+            req.cookies = { refreshToken };
 
             mockTokenService.refresh.mockResolvedValue(TEST_TOKENS);
 
@@ -287,12 +261,7 @@ describe("AuthController", () => {
 
         it("should call next with error if there was a server error during token refresh", async () => {
             const { refreshToken } = OLD_TOKENS;
-            const req = createRequest({
-                method: "POST",
-                cookies: {
-                    refreshToken
-                }
-            });
+            req.cookies = { refreshToken };
 
             mockTokenService.refresh.mockRejectedValue(genericError);
 
@@ -304,11 +273,6 @@ describe("AuthController", () => {
         });
 
         it("should call next with error if the refresh token is not in req.cookies", async () => {
-            const req = createRequest({
-                method: "POST",
-                cookies: {}
-            });
-
             mockTokenService.refresh.mockRejectedValue(genericError);
 
             await authController.refreshTokens(req, res, next);

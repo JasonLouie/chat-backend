@@ -1,10 +1,11 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { ChatService } from "./chat.service.js";
 import { requireFile, requireUser } from "../../common/utils/guard.js";
 import type { ChatParamsDto } from "../../common/params/params.dto.js";
 import type { CreateChatDto, UpdateChatNameDto } from "./chat.dto.js";
 import { uploadToCloudinary } from "../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../common/types/common.js";
+import type { TypedRequest } from "../../common/types/express.types.js";
 
 export class ChatController {
     private chatService: ChatService;
@@ -16,7 +17,7 @@ export class ChatController {
     /**
      * GET /api/chats
      */
-    public getUserChats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public getUserChats = async (req: TypedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const chats = await this.chatService.getUserChats(user.id);
@@ -29,7 +30,7 @@ export class ChatController {
     /**
      * POST /api/chats
      */
-    public createChat = async (req: Request<{}, {}, CreateChatDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public createChat = async (req: TypedRequest<{}, {}, CreateChatDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { memberIds, name } = req.body;
@@ -42,9 +43,9 @@ export class ChatController {
     }
 
     /**
-     * PUT /api/chats/:chatId/group-name
+     * PATCH /api/chats/:chatId/group-name
      */
-    public updateChatName = async (req: Request<ChatParamsDto, {}, UpdateChatNameDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateChatName = async (req: TypedRequest<ChatParamsDto, {}, UpdateChatNameDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId } = req.params;
@@ -58,9 +59,9 @@ export class ChatController {
     }
 
     /**
-     * PUT /api/chats/:chatId/group-icon
+     * PATCH /api/chats/:chatId/group-icon
      */
-    public updateChatIcon = async (req: Request<ChatParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateChatIcon = async (req: TypedRequest<ChatParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const file = requireFile(req);

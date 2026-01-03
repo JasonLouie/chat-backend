@@ -1,10 +1,11 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { ProfileService } from "./profile.service.js";
 import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
 import { requireFile, requireUser } from "../../../common/utils/guard.js";
 import type { ModifyProfileDto } from "./profile.dto.js";
 import type { UserParamsDto } from "../../../common/params/params.dto.js";
+import type { TypedRequest } from "../../../common/types/express.types.js";
 
 export class ProfileController {
     constructor(
@@ -14,7 +15,7 @@ export class ProfileController {
     /**
      * GET /api/users/me/profile
      */
-    public getMyProfile = async(req: Request<UserParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public getMyProfile = async(req: TypedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
 
@@ -28,7 +29,7 @@ export class ProfileController {
     /**
      * GET /api/users/:userId/profile
      */
-    public getUserProfile = async(req: Request<UserParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public getUserProfile = async(req: TypedRequest<UserParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             requireUser(req);
 
@@ -43,7 +44,7 @@ export class ProfileController {
     /**
      * PATCH /api/users/me/profile - Modify bio or display name
      */
-    public modifyProfile = async(req: Request<{}, {}, ModifyProfileDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public modifyProfile = async(req: TypedRequest<{}, {}, ModifyProfileDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { newBio, newDisplayName } = req.body;
@@ -58,7 +59,7 @@ export class ProfileController {
     /**
      * POST /api/users/me/profile/upload-avatar
      */
-    public updateProfilePicture = async(req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public updateProfilePicture = async(req: TypedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const file = requireFile(req);

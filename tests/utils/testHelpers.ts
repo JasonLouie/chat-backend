@@ -1,8 +1,9 @@
 import { jest, it, expect } from "@jest/globals";
-import type { Request, Response } from "express";
-import { createRequest, createResponse, type MockResponse, type ResponseCookie } from "node-mocks-http";
+import type { Response } from "express";
+import { createRequest, createResponse, type MockRequest, type MockResponse, type ResponseCookie } from "node-mocks-http";
 import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
 import { TEST_TOKENS } from "../fixtures/user.fixture.js";
+import type { TypedRequest } from "../../src/common/types/express.types.js";
 
 type TokenType = "accessToken" | "refreshToken";
 
@@ -23,23 +24,40 @@ export const expectClearedToken = (cookies: Record<string, ResponseCookie>, toke
     });
 };
 
-export const expectStatus204 = (res: MockResponse<Response>) => {
-    expect(res.statusCode).toBe(204);
+export const expectSuccess = (
+    mockMethod: any,
+    expectedArgs: any[],
+    res: MockResponse<Response>,
+    statusCode: 200 | 201 = 200
+) => {
+    expect(mockMethod).toHaveBeenCalledWith(...expectedArgs);
     
+    expect(res.statusCode).toBe(statusCode);
+    expect(res._isEndCalled()).toBeTruthy();
+}
+
+export const expectStatus204 = (
+    res: MockResponse<Response>
+) => {
+    expect(res.statusCode).toBe(204);
     expect(res._isEndCalled()).toBeTruthy();
 
     // Body is set to "No Content" internally in the mock
     expect(res._getData()).toBe("No Content");
 };
 
-export const expectNextError = (next: jest.Mock, res: MockResponse<Response>, expectedError: Error = genericError) => {
+export const expectNextError = (
+    next: jest.Mock,
+    res: MockResponse<Response>,
+    expectedError: Error = genericError
+) => {
     expect(next).toHaveBeenCalledWith(expectedError);
 
     expect(res._isEndCalled()).toBeFalsy();
 };
 
 export const testRequiresUser = (
-    controllerMethod: (req: Request<any, any, any, any>, res: MockResponse<Response>, next: jest.Mock) => Promise<void>
+    controllerMethod: (req: MockRequest<TypedRequest<any>>, res: MockResponse<Response>, next: jest.Mock) => Promise<void>
 ) => {
     it("should call next with 401 if req.user is missing", async () => {
         const req = createRequest();

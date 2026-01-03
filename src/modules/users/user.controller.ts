@@ -1,8 +1,9 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { UserService } from "./user.service.js";
 import { clearAuthCookies } from "../../common/utils/cookie.utils.js";
 import { requireUser } from "../../common/utils/guard.js";
 import type { UpdateEmailDto, UpdatePasswordDto, UpdateUsernameDto } from "./user.dto.js";
+import type { TypedRequest } from "../../common/types/express.types.js";
 
 export class UserController {
     constructor(
@@ -12,7 +13,7 @@ export class UserController {
     /**
      * GET /api/users/me
      */
-    public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    public getMe = async (req: TypedRequest, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
 
@@ -26,7 +27,7 @@ export class UserController {
     /**
      * PATCH /api/users/username
      */
-    public updateUsername = async (req: Request<{}, {}, UpdateUsernameDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateUsername = async (req: TypedRequest<{}, {}, UpdateUsernameDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { newUsername } = req.body;
@@ -41,7 +42,7 @@ export class UserController {
     /**
      * PATCH /api/users/password
      */
-    public updatePassword = async (req: Request<{}, {}, UpdatePasswordDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updatePassword = async (req: TypedRequest<{}, {}, UpdatePasswordDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { oldPassword, newPassword } = req.body;
@@ -56,7 +57,7 @@ export class UserController {
     /**
      * PATCH /api/users/email
      */
-    public updateEmail = async (req: Request<{}, {}, UpdateEmailDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateEmail = async (req: TypedRequest<{}, {}, UpdateEmailDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { newEmail, password } = req.body;
@@ -71,7 +72,7 @@ export class UserController {
     /**
      * DELETE /api/users
      */
-    public deleteUser = async (req: Request, res: Response, next: NextFunction) : Promise<void> => {
+    public deleteUser = async (req: TypedRequest, res: Response, next: NextFunction) : Promise<void> => {
         try {
             const user = requireUser(req);
 

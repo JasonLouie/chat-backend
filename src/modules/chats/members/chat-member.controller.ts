@@ -1,10 +1,11 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { ChatMemberService } from "./chat-member.service.js";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { ChatRole } from "../chat.types.js";
 import { requireUser } from "../../../common/utils/guard.js";
 import type { ChatParamsDto, MemberParamsDto } from "../../../common/params/params.dto.js";
 import type { UpdateMemberDto } from "./chat-member.dto.js";
+import type { TypedRequest } from "../../../common/types/express.types.js";
 
 export class ChatMemberController {
     constructor(
@@ -14,7 +15,7 @@ export class ChatMemberController {
     /**
      * GET /api/chats/:chatId/members 
      */
-    public getMembers = async (req: Request<ChatParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public getMembers = async (req: TypedRequest<ChatParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId } = req.params;
@@ -29,7 +30,7 @@ export class ChatMemberController {
     /**
      * DELETE /api/chats/:chatId/members/:memberId
      */
-    public deleteMember = async (req: Request<MemberParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public deleteMember = async (req: TypedRequest<MemberParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId, memberId } = req.params;
@@ -48,7 +49,7 @@ export class ChatMemberController {
     /**
      * POST /api/chats/:chatId/members/:memberId
      */
-    public addMember = async (req: Request<MemberParamsDto, {}, {}, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public addMember = async (req: TypedRequest<MemberParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId, memberId } = req.params;
@@ -63,7 +64,7 @@ export class ChatMemberController {
     /**
      * PATCH /api/chats/:chatId/:memberId
      */
-    public updateMember = async (req: Request<MemberParamsDto, {}, UpdateMemberDto, {}>, res: Response, next: NextFunction): Promise<void> => {
+    public updateMember = async (req: TypedRequest<MemberParamsDto, {}, UpdateMemberDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
             const { chatId, memberId } = req.params;

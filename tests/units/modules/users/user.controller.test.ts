@@ -1,24 +1,23 @@
 import { jest, describe, it, expect, beforeEach } from "@jest/globals";
-import type { Request, Response } from "express";
+import type { Response } from "express";
 import { UserController } from "../../../../src/modules/users/user.controller.js";
 import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { mockUserService, resetServiceMocks } from "../../../mocks/services.mock.js";
 import { createTestUser } from "../../../fixtures/user.fixture.js";
 import { USER_BODY } from "./user.constants.js";
-import { expectNextError, expectStatus204, genericError } from "../../../utils/testHelpers.js";
+import { expectNextError, expectStatus204, expectSuccess, genericError, testRequiresUser } from "../../../utils/testHelpers.js";
 import type { User } from "../../../../src/modules/users/user.entity.js";
+import type { TypedRequest } from "../../../../src/common/types/express.types.js";
 
 describe("UserController", () => {
-    let userController: UserController;
-    let req: MockRequest<Request>;
+    const userController = new UserController(mockUserService);
+    let req: MockRequest<TypedRequest>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
     let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
-
-        userController = new UserController(mockUserService);
 
         mockUser = createTestUser();
         req = createRequest({
@@ -29,14 +28,14 @@ describe("UserController", () => {
     });
 
     describe("getMe", () => {
+        testRequiresUser(userController.getMe);
+
         it("should return 200, id, username, and email", async () => {
             mockUserService.getUserFull.mockResolvedValue(mockUser);
 
             await userController.getMe(req, res, next);
 
-            expect(res.statusCode).toBe(200);
-
-            expect(mockUserService.getUserFull).toHaveBeenCalledWith(mockUser.id);
+            expectSuccess(mockUserService.getUserFull, [mockUser.id], res);
 
             expect(res._getJSONData()).toEqual(mockUser);
         });
@@ -53,12 +52,16 @@ describe("UserController", () => {
     });
 
     describe("updateUsername", () => {
-        it("should return 204 No Content", async () => {
-            const { newUsername } = USER_BODY.USERNAME;
+        const { newUsername } = USER_BODY.USERNAME;
 
+        beforeEach(() => {
             req.method = "PATCH";
             req.body = { newUsername };
+        });
 
+        testRequiresUser(userController.updateUsername);
+
+        it("should return 204 No Content", async () => {
             mockUserService.updateUsername.mockResolvedValue(undefined);
 
             await userController.updateUsername(req, res, next);
@@ -69,13 +72,6 @@ describe("UserController", () => {
         });
 
         it("should pass service errors to next", async () => {
-            const { newUsername } = USER_BODY.USERNAME;
-            
-            req.method = "PATCH";
-            req.body = {
-                newUsername
-            };
-
             mockUserService.updateUsername.mockRejectedValue(genericError);
 
             await userController.updateUsername(req, res, next);
@@ -87,15 +83,19 @@ describe("UserController", () => {
     });
 
     describe("updatePassword", () => {
-        it("should return 204 No Content", async () => {
-            const { oldPassword, newPassword } = USER_BODY.PASSWORD;
-            
+        const { oldPassword, newPassword } = USER_BODY.PASSWORD;
+
+        beforeEach(() => {
             req.method = "PATCH";
             req.body = {
                 oldPassword,
                 newPassword
             };
+        });
 
+        testRequiresUser(userController.updatePassword);
+
+        it("should return 204 No Content", async () => {
             mockUserService.updatePassword.mockResolvedValue(undefined);
 
             await userController.updatePassword(req, res, next);
@@ -106,14 +106,6 @@ describe("UserController", () => {
         });
 
         it("should pass service errors to next", async () => {
-            const { oldPassword, newPassword } = USER_BODY.PASSWORD;
-
-            req.method = "PATCH";
-            req.body = {
-                oldPassword,
-                newPassword
-            };
-
             mockUserService.updatePassword.mockRejectedValue(genericError);
 
             await userController.updatePassword(req, res, next);
@@ -125,15 +117,19 @@ describe("UserController", () => {
     });
 
     describe("updateEmail", () => {
-        it("should return 204 No Content", async () => {
-            const { newEmail, password } = USER_BODY.EMAIL;
-            
+        const { newEmail, password } = USER_BODY.EMAIL;
+
+        beforeEach(() => {
             req.method = "PATCH";
             req.body = {
                 newEmail,
                 password
             };
+        });
 
+        testRequiresUser(userController.updateEmail);
+
+        it("should return 204 No Content", async () => {
             mockUserService.updateEmail.mockResolvedValue(undefined);
 
             await userController.updateEmail(req, res, next);
@@ -144,14 +140,6 @@ describe("UserController", () => {
         });
 
         it("should pass service errors to next", async () => {
-            const { newEmail, password } = USER_BODY.EMAIL;
-
-            req.method = "PATCH";
-            req.body = {
-                newEmail,
-                password
-            };
-
             mockUserService.updateEmail.mockRejectedValue(genericError);
 
             await userController.updateEmail(req, res, next);
@@ -163,9 +151,13 @@ describe("UserController", () => {
     });
 
     describe("deleteUser", () => {
-        it("should return 204 No Content", async () => {
+        beforeEach(() => {
             req.method = "DELETE";
+        });
 
+        testRequiresUser(userController.deleteUser);
+
+        it("should return 204 No Content", async () => {
             mockUserService.deleteUser.mockResolvedValue(undefined);
 
             await userController.deleteUser(req, res, next);
@@ -176,8 +168,6 @@ describe("UserController", () => {
         });
 
         it("should pass service errors to next", async () => {
-            req.method = "DELETE";
-
             mockUserService.deleteUser.mockRejectedValue(genericError);
 
             await userController.deleteUser(req, res, next);
