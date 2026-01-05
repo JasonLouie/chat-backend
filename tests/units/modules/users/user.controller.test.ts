@@ -6,7 +6,6 @@ import { mockUserService, resetServiceMocks } from "../../../mocks/services.mock
 import { createTestUser } from "../../../fixtures/user.fixture.js";
 import { USER_BODY } from "./user.constants.js";
 import { expectNextError, expectStatus204, expectSuccess, genericError, testRequiresUser } from "../../../utils/testHelpers.js";
-import type { User } from "../../../../src/modules/users/user.entity.js";
 import type { TypedRequest } from "../../../../src/common/types/express.types.js";
 
 describe("UserController", () => {
@@ -14,14 +13,12 @@ describe("UserController", () => {
     let req: MockRequest<TypedRequest>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
-    let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
 
-        mockUser = createTestUser();
         req = createRequest({
-            user: mockUser
+            user: createTestUser()
         });
         res = createResponse();
         next = jest.fn();
@@ -31,13 +28,13 @@ describe("UserController", () => {
         testRequiresUser(userController.getMe);
 
         it("should return 200, id, username, and email", async () => {
-            mockUserService.getUserFull.mockResolvedValue(mockUser);
+            mockUserService.getUserFull.mockResolvedValue(req.user!);
 
             await userController.getMe(req, res, next);
 
-            expectSuccess(mockUserService.getUserFull, [mockUser.id], res);
+            expectSuccess(mockUserService.getUserFull, [req.user!.id], res);
 
-            expect(res._getJSONData()).toEqual(mockUser);
+            expect(res._getJSONData()).toEqual(req.user!);
         });
 
         it("should call next with error if user is not found", async () => {
@@ -45,7 +42,7 @@ describe("UserController", () => {
 
             await userController.getMe(req, res, next);
 
-            expect(mockUserService.getUserFull).toHaveBeenCalledWith(mockUser.id);
+            expect(mockUserService.getUserFull).toHaveBeenCalledWith(req.user!.id);
 
             expectNextError(next, res);
         });
@@ -68,7 +65,7 @@ describe("UserController", () => {
 
             expectStatus204(res);
 
-            expect(mockUserService.updateUsername).toHaveBeenCalledWith(mockUser.id, newUsername);
+            expect(mockUserService.updateUsername).toHaveBeenCalledWith(req.user!.id, newUsername);
         });
 
         it("should pass service errors to next", async () => {
@@ -76,7 +73,7 @@ describe("UserController", () => {
 
             await userController.updateUsername(req, res, next);
 
-            expect(mockUserService.updateUsername).toHaveBeenCalledWith(mockUser.id, newUsername);
+            expect(mockUserService.updateUsername).toHaveBeenCalledWith(req.user!.id, newUsername);
             
             expectNextError(next, res);
         });
@@ -102,7 +99,7 @@ describe("UserController", () => {
 
             expectStatus204(res);
 
-            expect(mockUserService.updatePassword).toHaveBeenCalledWith(mockUser.id, oldPassword, newPassword);
+            expect(mockUserService.updatePassword).toHaveBeenCalledWith(req.user!.id, oldPassword, newPassword);
         });
 
         it("should pass service errors to next", async () => {
@@ -110,7 +107,7 @@ describe("UserController", () => {
 
             await userController.updatePassword(req, res, next);
 
-            expect(mockUserService.updatePassword).toHaveBeenCalledWith(mockUser.id, oldPassword, newPassword);
+            expect(mockUserService.updatePassword).toHaveBeenCalledWith(req.user!.id, oldPassword, newPassword);
             
             expectNextError(next, res);
         });
@@ -136,7 +133,7 @@ describe("UserController", () => {
 
             expectStatus204(res);
 
-            expect(mockUserService.updateEmail).toHaveBeenCalledWith(mockUser.id, newEmail, password);
+            expect(mockUserService.updateEmail).toHaveBeenCalledWith(req.user!.id, newEmail, password);
         });
 
         it("should pass service errors to next", async () => {
@@ -144,7 +141,7 @@ describe("UserController", () => {
 
             await userController.updateEmail(req, res, next);
 
-            expect(mockUserService.updateEmail).toHaveBeenCalledWith(mockUser.id, newEmail, password);
+            expect(mockUserService.updateEmail).toHaveBeenCalledWith(req.user!.id, newEmail, password);
 
             expectNextError(next, res);
         });
@@ -164,7 +161,7 @@ describe("UserController", () => {
 
             expectStatus204(res);
 
-            expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith(req.user!.id);
         });
 
         it("should pass service errors to next", async () => {
@@ -172,7 +169,7 @@ describe("UserController", () => {
 
             await userController.deleteUser(req, res, next);
 
-            expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+            expect(mockUserService.deleteUser).toHaveBeenCalledWith(req.user!.id);
 
             expectNextError(next, res);
         });

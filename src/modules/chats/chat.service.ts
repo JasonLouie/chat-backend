@@ -4,13 +4,15 @@ import { Chat } from "./chat.entity.js";
 import type { UUID } from "../../common/types/common.js";
 import { EndpointError } from "../../common/errors/EndpointError.js";
 import { ChatType, type ModifyChatGroup } from "./chat.types.js";
-import { ChatMemberService } from "./members/chat-member.service.js";
-import { UserService } from "../users/user.service.js";
+import type { ChatMemberService } from "./members/chat-member.service.js";
+import type { UserService } from "../users/user.service.js";
+import type { MessageService } from "./messages/message.service.js";
 
 export class ChatService {
     constructor(
         private userService: UserService,
         private chatMemberService: ChatMemberService,
+        private messageService: MessageService,
         private defaultRepo: Repository<Chat> = AppDataSource.getRepository(Chat),
         private dataSource: DataSource = AppDataSource
     ) {}
@@ -46,6 +48,18 @@ export class ChatService {
             ])
             .orderBy("lastMsg.createdAt", "DESC")
             .getMany();
+    }
+
+    /**
+     * Returns an object containing messages and members of a chat
+     */
+    public getChatDetails = async (chatId: UUID, userId: UUID) => {
+        const { chat } = await this.chatMemberService.validateChatMembership(chatId, userId, true);
+        const [ messages, members] = await Promise.all([
+            this.messageService.searchMessages(chatId, userId, {}, true),
+            this.chatMemberService.getChatMembers(chatId, userId, true)
+        ]);
+        return { chat, messages, members };
     }
 
     /**

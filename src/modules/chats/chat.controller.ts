@@ -3,7 +3,7 @@ import { ChatService } from "./chat.service.js";
 import { requireFile, requireUser } from "../../common/utils/guard.js";
 import type { ChatParamsDto } from "../../common/params/params.dto.js";
 import type { CreateChatDto, UpdateChatNameDto } from "./chat.dto.js";
-import { uploadToCloudinary } from "../../common/utils/upload.utils.js";
+import uploadUtils from "../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../common/types/common.js";
 import type { TypedRequest } from "../../common/types/express.types.js";
 
@@ -36,7 +36,23 @@ export class ChatController {
             const { memberIds, name } = req.body;
 
             const chat = await this.chatService.createChat(user.id, memberIds, name);
-            res.status(201).json(chat);
+            const chatDetails = await this.chatService.getChatDetails(chat.id, user.id);
+            res.status(201).json(chatDetails);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * GET /api/chats/:chatId
+     */
+    public getChatDetails = async (req: TypedRequest<ChatParamsDto>, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const user = requireUser(req);
+            const { chatId } = req.params;
+
+            const chatDetails = await this.chatService.getChatDetails(chatId, user.id);
+            res.json(chatDetails);
         } catch (err) {
             next(err);
         }
@@ -67,7 +83,7 @@ export class ChatController {
             const file = requireFile(req);
 
             const { chatId } = req.params;
-            const imageUrl = await uploadToCloudinary(file.buffer, ImageFolder.CHAT);
+            const imageUrl = await uploadUtils.uploadToCloudinary(file.buffer, ImageFolder.CHAT);
 
             await this.chatService.modifyChatGroup(chatId, user.id, { imageUrl });
             res.sendStatus(204);

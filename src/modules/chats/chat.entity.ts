@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { ChatMember as ChatMemberEntity } from "./members/chat-member.entity.js";
 import type { ChatMember } from "./members/chat-member.entity.js";
 import { Message as MessageEntity } from "./messages/message.entity.js";
@@ -11,20 +11,23 @@ export class Chat {
     @PrimaryGeneratedColumn("uuid")
     id!: UUID;
 
-    @Column({ type: "boolean", default: false })
-    isGroup!: boolean;
-
     @Column({ type: "varchar", length: 255, nullable: true })
-    imageUrl!: string | null;
+    imageUrl?: string | null;
 
     @Column({ type: "varchar", length: 100, nullable: true })
-    name!: string | null;
+    name?: string | null;
 
     @Column({ type: "enum", enum: ChatType, default: ChatType.DM })
     type!: ChatType;
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 
     @OneToMany(() => ChatMemberEntity, (chatMember) => chatMember.chat)
     members!: ChatMember[];

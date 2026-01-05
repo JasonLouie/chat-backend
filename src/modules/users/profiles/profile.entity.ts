@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { Column, DeleteDateColumn, Entity, JoinColumn, OneToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { User as UserEntity } from "../user.entity.js";
 import type { User } from "../user.entity.js";
 import { UserStatus } from "../user.types.js";
@@ -20,6 +20,12 @@ export class Profile {
 
     @Column({ type: "varchar", length: 500, nullable: true })
     bio!: string | null;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+    
+    @DeleteDateColumn()
+    deletedAt?: Date;
 
     @OneToOne(() => UserEntity, (user) => user.profile, {
         onDelete: "CASCADE"

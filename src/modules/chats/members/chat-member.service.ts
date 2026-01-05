@@ -14,9 +14,15 @@ export class ChatMemberService {
     /**
      * Returns all members of a chat
      */
-    public getChatMembers = async(chatId: UUID, userId: UUID): Promise<ChatMember[]> => {
+    public getChatMembers = async (
+        chatId: UUID,
+        userId: UUID,
+        validated: boolean = false
+    ): Promise<ChatMember[]> => {
         const manager = this.dataSource.manager;
-        await this.validateChatMembership(chatId, userId);
+        if (!validated) {
+            await this.validateChatMembership(chatId, userId);
+        }
         return await manager.find(ChatMember, {
             where: { chatId },
             relations: {

@@ -29,13 +29,12 @@ export class MessageService {
     public searchMessages = async (
         chatId: UUID,
         userId: UUID,
-        filters: SearchMessagesQuery
+        filters: SearchMessagesQuery = {},
+        validated: boolean = false
     ): Promise<Message[]> => {
-        await this.chatMemberService.validateChatMembership(
-            chatId,
-            userId,
-            false,
-        );
+        if (!validated) {
+            await this.chatMemberService.validateChatMembership(chatId, userId);
+        }
 
         const { keyword, type, beforeDate, afterDate, pinned, limit } = filters;
 
@@ -151,7 +150,6 @@ export class MessageService {
             if (message.content === newContent) return;
 
             message.content = newContent;
-            message.editedAt = new Date();
 
             await manager.save(Message, message);
         });

@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import { MessageService } from "./message.service.js";
 import { MessageType } from "./message.types.js";
-import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
+import uploadUtils from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
 import type { ChatParamsDto, MessageParamsDto } from "../../../common/params/params.dto.js";
 import type { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendMessageDto, UpdateMessageDto } from "./messages.dto.js";
@@ -63,7 +63,7 @@ export class MessageController{
             let content = req.body.content;
             if (type === MessageType.IMAGE) {
                 const file = requireFile(req);
-                content = await uploadToCloudinary(file.buffer, ImageFolder.MESSAGE);
+                content = await uploadUtils.uploadToCloudinary(file.buffer, ImageFolder.MESSAGE);
             }
 
             const { chatId } = req.params;

@@ -1,11 +1,13 @@
 import {
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     Entity,
     Index,
     JoinColumn,
     ManyToOne,
     PrimaryGeneratedColumn,
+    UpdateDateColumn,
 } from "typeorm";
 import { MessageType } from "./message.types.js";
 import { Chat as ChatEntity } from "../chat.entity.js";
@@ -38,8 +40,11 @@ export class Message {
     @CreateDateColumn()
     createdAt!: Date;
 
-    @Column({ type: "datetime", nullable: true })
-    editedAt!: Date | null;
+    @UpdateDateColumn()
+    updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 
     @ManyToOne(() => ChatEntity, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })

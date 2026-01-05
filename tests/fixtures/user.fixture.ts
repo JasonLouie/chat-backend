@@ -1,4 +1,3 @@
-import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
 import { Profile } from "../../src/modules/users/profiles/profile.entity.js";
 import type { ProfileResponse } from "../../src/modules/users/profiles/profile.types.js";
 import { User } from "../../src/modules/users/user.entity.js";
@@ -47,14 +46,16 @@ export const createTestUser = (
     return Object.assign(user, overrides);
 };
 
-export const createProfileResponse = (overrides?: Partial<ProfileResponse>): ProfileResponse => {
-    const profileResponse = {
+export const createProfileResponse = (
+    overrides: Partial<ProfileResponse> = {}
+): ProfileResponse => {
+    return {
         id: TEST_USER_ID,
         username: TEST_USERNAME,
         displayName: TEST_DISPLAY_NAME,
         imageUrl: TEST_IMAGE_URL,
         bio: TEST_BIO,
-        status: TEST_STATUS
-    }
-    return Object.assign(profileResponse, overrides);
+        status: TEST_STATUS,
+        ...overrides
+    };
 };

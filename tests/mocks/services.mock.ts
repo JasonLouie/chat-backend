@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 import { AuthService } from "../../src/modules/auth/auth.service.js";
 import { TokenService } from "../../src/modules/auth/tokens/token.service.js";
 import { ChatService } from "../../src/modules/chats/chat.service.js";

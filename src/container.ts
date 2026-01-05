@@ -22,8 +22,8 @@ const tokenService = new TokenService();
 
 // Dependent Services
 const authService = new AuthService(userService);
-const chatService = new ChatService(userService, chatMemberService);
 const messageService = new MessageService(chatMemberService);
+const chatService = new ChatService(userService, chatMemberService, messageService);
 
 // Configure Passport
 configurePassport(authService);

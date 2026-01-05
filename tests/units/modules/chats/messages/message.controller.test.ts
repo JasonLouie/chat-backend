@@ -1,35 +1,42 @@
-import { jest, describe, it, expect, beforeEach } from "@jest/globals";
-import type { Request, Response } from "express";
+import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals";
+import type { Response } from "express";
 import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { MessageController } from "../../../../../src/modules/chats/messages/message.controller.js";
 import { EndpointError } from "../../../../../src/common/errors/EndpointError.js";
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
 import { MessageType } from '../../../../../src/modules/chats/messages/message.types.js';
-import type { User } from "../../../../../src/modules/users/user.entity.js";
 import { TEST_CHAT_ID } from "../../../../fixtures/chat.fixture.js";
+import type { TypedRequest } from "../../../../../src/common/types/express.types.js";
+import type { ChatParamsDto, MessageParamsDto } from "../../../../../src/common/params/params.dto.js";
+import uploadUtils from "../../../../../src/common/utils/upload.utils.js";
 
 describe("MessageController", () => {
-    let messageController: MessageController;
-    let req: Request<any, any, any, any>;
+    const messageController = new MessageController(mockMessageService);
+
+    let uploadSpy: any;
+    let req: MockRequest<TypedRequest<ChatParamsDto | MessageParamsDto>>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
-    let mockUser: User;
 
     beforeEach(() => {
         resetServiceMocks();
 
-        messageController = new MessageController(mockMessageService);
-
-        mockUser = createTestUser();
         req = createRequest({
-            user: mockUser,
+            user: createTestUser(),
             params: {
                 chatId: TEST_CHAT_ID
             }
         });
         res = createResponse();
         next = jest.fn();
+
+        uploadSpy = jest.spyOn(uploadUtils, "uploadToCloudinary");
+    });
+
+    afterEach(() => {
+        // Restore original function after each test
+        jest.restoreAllMocks();
     });
 
     describe("searchMessages", () => {
@@ -55,7 +62,7 @@ describe("MessageController", () => {
             // Assert
             expect(mockMessageService.sendMessage).toHaveBeenCalledWith(
                 TEST_CHAT_ID,
-                mockUser.id,
+                req.user!.id,
                 "Hello World",
                 MessageType.TEXT
             );

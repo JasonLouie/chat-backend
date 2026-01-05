@@ -2,7 +2,7 @@ import { jest, it, expect } from "@jest/globals";
 import type { Response } from "express";
 import { createRequest, createResponse, type MockRequest, type MockResponse, type ResponseCookie } from "node-mocks-http";
 import type { Tokens } from "../../src/modules/auth/tokens/token.types.js";
-import { TEST_TOKENS } from "../fixtures/user.fixture.js";
+import { createTestUser, TEST_TOKENS } from "../fixtures/user.fixture.js";
 import type { TypedRequest } from "../../src/common/types/express.types.js";
 
 type TokenType = "accessToken" | "refreshToken";
@@ -68,6 +68,24 @@ export const testRequiresUser = (
 
         expect(next).toHaveBeenCalledWith(
             expect.objectContaining({ status: 401 })
+        );
+    });
+}
+
+export const testRequiresFile = (
+    controllerMethod: (req: MockRequest<TypedRequest<any>>, res: MockResponse<Response>, next: jest.Mock) => Promise<void>
+) => {
+    it("should call next with 400 if req.file is missing", async () => {
+        const req = createRequest({
+            user: createTestUser()
+        });
+        const res = createResponse();
+        const next = jest.fn();
+
+        await controllerMethod(req, res, next);
+
+        expect(next).toHaveBeenCalledWith(
+            expect.objectContaining({ status: 400 })
         );
     });
 }

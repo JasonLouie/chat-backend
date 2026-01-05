@@ -1,6 +1,6 @@
 import type { Response, NextFunction } from "express";
 import { ProfileService } from "./profile.service.js";
-import { uploadToCloudinary } from "../../../common/utils/upload.utils.js";
+import uploadUtils from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
 import { requireFile, requireUser } from "../../../common/utils/guard.js";
 import type { ModifyProfileDto } from "./profile.dto.js";
@@ -64,7 +64,7 @@ export class ProfileController {
             const user = requireUser(req);
             const file = requireFile(req);
 
-            const imageUrl = await uploadToCloudinary(file.buffer, ImageFolder.USER);
+            const imageUrl = await uploadUtils.uploadToCloudinary(file.buffer, ImageFolder.USER);
             await this.profileService.modifyProfile(user.id, { imageUrl });
             res.sendStatus(204);
         } catch (err) {
