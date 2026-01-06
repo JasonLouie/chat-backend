@@ -18,7 +18,7 @@ export function createChatRoutes(chatController: ChatController, chatMemberContr
 
     router.patch("/:chatId/group-name", validationMiddleware(ChatParamsDto, "params"), validationMiddleware(UpdateChatNameDto), chatController.updateChatName);
 
-    router.patch("/:chatId/group-icon", validationMiddleware(ChatParamsDto, "params"), upload.single("chat_icon"), chatController.updateChatIcon);
+    router.post("/:chatId/group-icon", validationMiddleware(ChatParamsDto, "params"), upload.single("chat_icon"), chatController.updateChatIcon);
 
     router.use("/:chatId/members", createChatMemberRoutes(chatMemberController));
     router.use("/:chatId/messages", createMessageRoutes(messageController));

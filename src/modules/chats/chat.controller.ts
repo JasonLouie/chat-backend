@@ -21,7 +21,7 @@ export class ChatController {
         try {
             const user = requireUser(req);
             const chats = await this.chatService.getUserChats(user.id);
-            res.status(201).json(chats);
+            res.json(chats);
         } catch (err) {
             next(err);
         }
@@ -75,7 +75,7 @@ export class ChatController {
     }
 
     /**
-     * PATCH /api/chats/:chatId/group-icon
+     * POST /api/chats/:chatId/group-icon
      */
     public updateChatIcon = async (req: TypedRequest<ChatParamsDto>, res: Response, next: NextFunction): Promise<void> => {
         try {

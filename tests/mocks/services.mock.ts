@@ -37,6 +37,7 @@ export const mockProfileService = {
 export const mockChatService = {
     getUserChats: jest.fn(),
     createChat: jest.fn(),
+    getChatDetails: jest.fn(),
     modifyChatGroup: jest.fn()
 } as unknown as jest.Mocked<ChatService>;
 
