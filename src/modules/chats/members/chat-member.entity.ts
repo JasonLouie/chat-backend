@@ -26,8 +26,8 @@ export class ChatMember {
     @CreateDateColumn()
     joinedAt!: Date;
 
-    @DeleteDateColumn()
-    deletedAt!: Date;
+    @DeleteDateColumn( { nullable: true })
+    deletedAt!: Date | null;
 
     @Column({ type: "datetime", nullable: true })
     lastReadAt!: Date | null;

@@ -16,12 +16,12 @@ import { UserController } from "./modules/users/user.controller.js";
 
 // Foundation Services
 const userService = new UserService();
-const chatMemberService = new ChatMemberService();
 const profileService = new ProfileService();
 const tokenService = new TokenService();
 
 // Dependent Services
 const authService = new AuthService(userService);
+const chatMemberService = new ChatMemberService(userService);
 const messageService = new MessageService(chatMemberService);
 const chatService = new ChatService(userService, chatMemberService, messageService);
 

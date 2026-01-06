@@ -49,7 +49,7 @@ export const expectStatus204 = (
 export const expectNextError = (
     next: jest.Mock,
     res: MockResponse<Response>,
-    expectedError: Error = genericError
+    expectedError: any = genericError
 ) => {
     expect(next).toHaveBeenCalledWith(expectedError);
 

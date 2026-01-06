@@ -44,7 +44,7 @@ export const mockChatService = {
 export const mockChatMemberService = {
     getChatMembers: jest.fn(),
     leaveChat: jest.fn(),
-    addMember: jest.fn(),
+    addMembers: jest.fn(),
     removeMember: jest.fn(),
     transferOwnership: jest.fn(),
     validateChatMembership: jest.fn()

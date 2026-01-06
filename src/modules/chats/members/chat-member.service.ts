@@ -1,12 +1,14 @@
-import { Not, type EntityManager, type Repository, type DataSource } from "typeorm";
+import { Not, type EntityManager, type Repository, type DataSource, In } from "typeorm";
 import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { AppDataSource } from "../../../db/data-source.js";
 import { ChatMember } from "./chat-member.entity.js";
 import type { UUID } from "../../../common/types/common.js";
 import { ChatRole, ChatType } from "../chat.types.js";
+import type { UserService } from "../../users/user.service.js";
 
 export class ChatMemberService {
     constructor(
+        private userService: UserService,
         private defaultRepo: Repository<ChatMember> = AppDataSource.getRepository(ChatMember),
         private dataSource: DataSource = AppDataSource
     ) {}
@@ -75,39 +77,76 @@ export class ChatMemberService {
     /**
      * Add others to the group if the group is less than 10 members. All members are allowed to add new users to a group.
      */
-    public addMember = async (chatId: UUID, initiatingUserId: UUID, newMemberId: UUID): Promise<ChatMember> => {
+    public addMembers = async (chatId: UUID, initiatingUserId: UUID, newMemberIds: UUID[]): Promise<ChatMember[]> => {
+        const uniqueMemberIds = [...new Set(newMemberIds)];
+
+        if (uniqueMemberIds.length === 0) {
+            throw new EndpointError(400, "No new members provided.");
+        }
+
+        if (uniqueMemberIds.includes(initiatingUserId)) {
+            throw new EndpointError(400, "Cannot add yourself to a group.");
+        }
+        
         return await this.dataSource.transaction(async (manager) => {
-            // Check if user is in the chat
-            const initiatingUser = await this.validateChatMembership(chatId, initiatingUserId, true, manager);
+            // Validate if the user is in the chat
+            const { chat } = await this.validateChatMembership(chatId, initiatingUserId, true, manager);;
             
             // Check if the chat is a group
-            const { chat } = initiatingUser;
-            if (chat.type !== ChatType.GROUP) throw new EndpointError(400, "Cannot add members to a private chat.");
-
-            // Check if the initiating user is in the group
-            const [memberCount, existingMember] = await Promise.all([
-                this.countMembers(chatId, undefined, manager),
-                this.getExistingMember(chatId, newMemberId, manager, true)
-            ]);
-
-            if (memberCount >= 10) throw new EndpointError(400, "Chat is full.");
-            if (initiatingUserId === newMemberId) throw new EndpointError(400, "Cannot add yourself to a group.");
-
-            // Check if new member exists in the group
-            if (existingMember) {
-                if (existingMember.deletedAt) {
-                    // If they were a member in the past, bring them back but reset their role to MEMBER
-                    existingMember.role = ChatRole.MEMBER;
-                    return await manager.recover(ChatMember, existingMember);
-                }
-                throw new EndpointError(400, "User is already in the chat.");
+            if (chat.type !== ChatType.GROUP) {
+                throw new EndpointError(400, "Cannot add members to a private chat.");
             }
 
-            // Handle adding a new member
-            return await manager.save(ChatMember, {
-                chatId,
-                userId: newMemberId
-            });
+            // Check if the initiating user is in the group
+            const [currentMemberCount, validUserCount, existingMembers] = await Promise.all([
+                this.countMembers(chatId, undefined, manager),
+                this.userService.countUsers(uniqueMemberIds, manager),
+                manager.find(ChatMember, {
+                    where: {
+                        chatId,
+                        userId: In(uniqueMemberIds)
+                    },
+                    withDeleted: true
+                })
+            ]);
+
+            // Capacity Check
+            if (currentMemberCount + uniqueMemberIds.length > 10) {
+                throw new EndpointError(400, "Adding these members would exceed the chat capacity of 10.");
+            }
+
+            // User Existence Check
+            if (validUserCount !== uniqueMemberIds.length) {
+                throw new EndpointError(400, "One or more provided users do not exist.");
+            }
+
+            // Check if any active members are soft-deleted
+            const activeExistingMember = existingMembers.find(m => !(m.deletedAt));
+            if (activeExistingMember) {
+                throw new EndpointError(400, `User ${activeExistingMember.userId} is already in the chat.`);
+            }
+
+            const membersToSave: ChatMember[] = [];
+            for (const userId of uniqueMemberIds) {
+                const existingMember = existingMembers.find(m => m.userId === userId);
+
+                // Handle recovery of previously existing members
+                if (existingMember) {
+                    existingMember.deletedAt = null;
+                } else {
+                    // Create new member
+                    membersToSave.push(
+                        manager.create(ChatMember, {
+                            chatId,
+                            userId,
+                            role: ChatRole.MEMBER
+                        })
+                    );
+                }
+            }
+
+            // Execute batch save (new members and recovering old ones)
+            return await manager.save(ChatMember, membersToSave);
         });
     }
 

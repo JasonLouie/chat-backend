@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Profile as ProfileEntity } from "./profiles/profile.entity.js";
 import type { Profile } from "./profiles/profile.entity.js";
 import { ChatMember as ChatMemberEntity } from "../chats/members/chat-member.entity.js";
@@ -26,6 +26,9 @@ export class User {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @DeleteDateColumn( { nullable: true })
+    deletedAt!: Date | null;
 
     @BeforeInsert()
     @BeforeUpdate()

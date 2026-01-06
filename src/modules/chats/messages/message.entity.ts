@@ -43,8 +43,8 @@ export class Message {
     @UpdateDateColumn()
     updatedAt!: Date;
 
-    @DeleteDateColumn()
-    deletedAt?: Date;
+    @DeleteDateColumn( { nullable: true })
+    deletedAt!: Date | null;
 
     @ManyToOne(() => ChatEntity, (chat) => chat, { onDelete: "CASCADE" })
     @JoinColumn({ name: "chat_id" })

@@ -4,7 +4,7 @@ import { EndpointError } from "../../../common/errors/EndpointError.js";
 import { ChatRole } from "../chat.types.js";
 import { requireUser } from "../../../common/utils/guard.js";
 import type { ChatParamsDto, MemberParamsDto } from "../../../common/params/params.dto.js";
-import type { UpdateMemberDto } from "./chat-member.dto.js";
+import type { AddMembersDto, UpdateMemberDto } from "./chat-member.dto.js";
 import type { TypedRequest } from "../../../common/types/express.types.js";
 
 export class ChatMemberController {
@@ -20,7 +20,7 @@ export class ChatMemberController {
             const user = requireUser(req);
             const { chatId } = req.params;
             
-            const members = await this.chatMemberService.getChatMembers(chatId, user.id);
+            const members = await this.chatMemberService.getChatMembers(chatId, user.id, false);
             res.json(members);
         } catch (err) {
             next(err);
@@ -28,33 +28,15 @@ export class ChatMemberController {
     }
 
     /**
-     * DELETE /api/chats/:chatId/members/:memberId
+     * POST /api/chats/:chatId/members
      */
-    public deleteMember = async (req: TypedRequest<MemberParamsDto>, res: Response, next: NextFunction): Promise<void> => {
+    public addMembers = async (req: TypedRequest<ChatParamsDto, {}, AddMembersDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
             const user = requireUser(req);
-            const { chatId, memberId } = req.params;
+            const { chatId } = req.params;
+            const { memberIds } = req.body;
 
-            if (memberId === user.id) {
-                await this.chatMemberService.leaveChat(chatId, user.id);
-            } else {
-                await this.chatMemberService.removeMember(chatId, user.id, memberId);
-            }
-            res.sendStatus(204);
-        } catch (err) {
-            next(err);
-        }
-    }
-
-    /**
-     * POST /api/chats/:chatId/members/:memberId
-     */
-    public addMember = async (req: TypedRequest<MemberParamsDto>, res: Response, next: NextFunction): Promise<void> => {
-        try {
-            const user = requireUser(req);
-            const { chatId, memberId } = req.params;
-
-            const member = await this.chatMemberService.addMember(chatId, user.id, memberId);
+            const member = await this.chatMemberService.addMembers(chatId, user.id, memberIds);
             res.status(201).json(member);
         } catch (err) {
             next(err);
@@ -76,6 +58,25 @@ export class ChatMemberController {
             }
             
             throw new EndpointError(400, "Invalid role update.");
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * DELETE /api/chats/:chatId/members/:memberId
+     */
+    public deleteMember = async (req: TypedRequest<MemberParamsDto>, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const user = requireUser(req);
+            const { chatId, memberId } = req.params;
+
+            if (memberId === user.id) {
+                await this.chatMemberService.leaveChat(chatId, user.id);
+            } else {
+                await this.chatMemberService.removeMember(chatId, user.id, memberId);
+            }
+            res.sendStatus(204);
         } catch (err) {
             next(err);
         }

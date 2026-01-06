@@ -1,11 +1,10 @@
-import { ArrayMinSize, IsArray, IsOptional, IsUUID } from "class-validator";
+import { IsOptional } from "class-validator";
 import type { UUID } from "../../common/types/common.js";
 import { IsValidGroupName } from "../../decorators/IsValidGroupName.js";
+import { IsUUIDArray } from "../../decorators/IsUUIDArray.js";
 
 export class CreateChatDto {
-    @IsArray()
-    @ArrayMinSize(1, { message: "A chat must include at least one other person." })
-    @IsUUID("4", { each: true })
+    @IsUUIDArray("A chat must include at least one other person.")
     memberIds!: UUID[];
 
     @IsOptional()
@@ -15,5 +14,5 @@ export class CreateChatDto {
 
 export class UpdateChatNameDto {
     @IsValidGroupName()
-    name?: string;
+    name!: string;
 }
