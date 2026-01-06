@@ -4,7 +4,7 @@ import { MessageType } from "./message.types.js";
 import uploadUtils from "../../../common/utils/upload.utils.js";
 import { ImageFolder } from "../../../common/types/common.js";
 import type { ChatParamsDto, MessageParamsDto } from "../../../common/params/params.dto.js";
-import type { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendMessageDto, UpdateMessageDto } from "./messages.dto.js";
+import type { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendTextMessageDto, UpdateMessageDto } from "./messages.dto.js";
 import { requireFile, requireUser } from "../../../common/utils/guard.js";
 import type { TypedRequest } from "../../../common/types/express.types.js";
 
@@ -20,8 +20,8 @@ export class MessageController{
      */
     public getMessages = async (req: TypedRequest<ChatParamsDto, {}, {}, GetMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId } = req.params;
             const user = requireUser(req);
+            const { chatId } = req.params;
             const { cursor, limit } = req.query;
 
             const messages = await this.messageService.searchMessages(
@@ -32,6 +32,7 @@ export class MessageController{
                     limit
                 }
             );
+
             res.json(messages);
         } catch (err) {
             next(err);
@@ -43,11 +44,12 @@ export class MessageController{
      */
     public searchMessages = async (req: TypedRequest<ChatParamsDto, {}, {}, SearchMessagesDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId } = req.params;
             const user = requireUser(req);
+            const { chatId } = req.params;
             const { keyword, type, beforeDate, afterDate, pinned, limit } = req.query;
             
             const messages = await this.messageService.searchMessages(chatId, user.id, { keyword, type, beforeDate, afterDate, pinned, limit });
+            
             res.json(messages);
         } catch (err) {
             next(err);
@@ -55,21 +57,34 @@ export class MessageController{
     }
 
     /**
-     * POST /api/chats/:chatId/messages
+     * POST /api/chats/:chatId/messages/text
      */
-    public sendMessage = async (req: TypedRequest<ChatParamsDto, {}, SendMessageDto>, res: Response, next: NextFunction): Promise<void> => {
+    public sendText = async (req: TypedRequest<ChatParamsDto, {}, SendTextMessageDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { type } = req.body;
-            let content = req.body.content;
-            if (type === MessageType.IMAGE) {
-                const file = requireFile(req);
-                content = await uploadUtils.uploadToCloudinary(file.buffer, ImageFolder.MESSAGE);
-            }
-
-            const { chatId } = req.params;
             const user = requireUser(req);
+            const { content } = req.body;
+            const { chatId } = req.params;
 
-            const message = await this.messageService.sendMessage(chatId, user.id, content, type);
+            const message = await this.messageService.sendMessage(chatId, user.id, content, MessageType.TEXT);
+            
+            res.status(201).json(message);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    /**
+     * POST /api/chats/:chatId/messages/image
+     */
+    public sendImage = async (req: TypedRequest<ChatParamsDto>, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const user = requireUser(req);
+            const file = requireFile(req);
+            const { chatId } = req.params;
+
+            const content = await uploadUtils.uploadToCloudinary(file.buffer, ImageFolder.MESSAGE);
+            const message = await this.messageService.sendMessage(chatId, user.id, content, MessageType.IMAGE);
+            
             res.status(201).json(message);
         } catch (err) {
             next(err);
@@ -81,11 +96,11 @@ export class MessageController{
      */
     public updateMessage = async (req: TypedRequest<MessageParamsDto, {}, UpdateMessageDto>, res: Response, next: NextFunction): Promise<void> => {
         try {
-            const { chatId, messageId } = req.params;
             const user = requireUser(req);
-            const { content } = req.body;
+            const { chatId, messageId } = req.params;
+            const { newContent } = req.body;
 
-            await this.messageService.updateMessage(messageId, chatId, user.id, content);
+            await this.messageService.updateMessage(messageId, chatId, user.id, newContent);
             res.sendStatus(204);
         } catch (err) {
             next(err);
@@ -101,7 +116,7 @@ export class MessageController{
             const { chatId, messageId } = req.params;
             const { pinned } = req.body;
 
-            await this.messageService.pinMessage(messageId, chatId, user.id, pinned as boolean);
+            await this.messageService.pinMessage(messageId, chatId, user.id, pinned);
             res.sendStatus(204);
         } catch (err) {
             next(err);

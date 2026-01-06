@@ -8,6 +8,7 @@ import { TEST_USER_ID } from "./user.fixture.js";
 export const TEST_CHAT_ID = "chat-id-1";
 export const TEST_CHAT_NAME = "Group";
 export const TEST_GROUP_IMAGE_URL = "https://cloudinary.com/group-pic.jpg";
+export const TEST_MESSAGE_IMAGE_URL = "https://cloudinary.com/test-image.jpg";
 
 export const createChat = (
     type: ChatType = ChatType.DM,
@@ -65,6 +66,7 @@ export const createMessages = (
 
     for (let i = 1; i <= messageCount; i++) {
         messages.push({
+            id: `msg-id-${i}`,
             chatId: TEST_CHAT_ID,
             senderId: TEST_USER_ID,
             content: `message #${i}`,

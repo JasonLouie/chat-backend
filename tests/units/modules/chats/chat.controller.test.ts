@@ -48,10 +48,10 @@ describe("ChatController", () => {
         let chats: Chat[];
 
         beforeEach(() => {
-            const [message] = createMessages(MessageType.TEXT, 1, { chatId: "chat-id-1" });
-            chats = [createChat(ChatType.DM, { lastMessage: message!, numParticipants: 2 })];
+            const [message] = createMessages(MessageType.TEXT, 1, { chatId: "chat-id-1" }) as [Message];
+            chats = [createChat(ChatType.DM, { lastMessage: message, numParticipants: 2 })];
             for (let i = 2; i < 5; i++) {
-                chats.push(createChat(ChatType.DM, { id: `chat-id-${i}`, lastMessage: { ...message!, chatId: `chat-id-${i}` }, numParticipants: 2 }));
+                chats.push(createChat(ChatType.DM, { id: `chat-id-${i}`, lastMessage: { ...message, chatId: `chat-id-${i}` }, numParticipants: 2 }));
             }
         });
 

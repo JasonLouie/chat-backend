@@ -1,17 +1,19 @@
 import { Router } from "express";
 import type { MessageController } from "./message.controller.js";
 import { validationMiddleware } from "../../../common/middleware/validation.middleware.js";
-import { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendMessageDto, UpdateMessageDto } from "./messages.dto.js";
+import { GetMessagesDto, PinMessageDto, SearchMessagesDto, SendTextMessageDto, UpdateMessageDto } from "./messages.dto.js";
 import { ChatParamsDto, MessageParamsDto } from "../../../common/params/params.dto.js";
 
 export function createMessageRoutes(messageController: MessageController) {
     const router = Router({ mergeParams: true });
     
-    router.route("/")
-        .get(validationMiddleware(ChatParamsDto, "params"), validationMiddleware(GetMessagesDto, "query", true), messageController.getMessages)
-        .post(validationMiddleware(ChatParamsDto, "params"), validationMiddleware(SendMessageDto), messageController.sendMessage);
-
+    router.get("/", validationMiddleware(ChatParamsDto, "params"), validationMiddleware(GetMessagesDto, "query", true), messageController.getMessages)
+        
     router.get("/search", validationMiddleware(ChatParamsDto, "params"), validationMiddleware(SearchMessagesDto, "query", true), messageController.searchMessages);
+    
+    router.post("/text", validationMiddleware(ChatParamsDto, "params"), validationMiddleware(SendTextMessageDto), messageController.sendText);
+
+    router.post("/image", validationMiddleware(ChatParamsDto, "params"), messageController.sendImage);
 
     router.route("/:messageId")
         .patch(validationMiddleware(MessageParamsDto, "params"), validationMiddleware(UpdateMessageDto), messageController.updateMessage)

@@ -1,9 +1,10 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { MessageType } from "./message.types.js";
 import { Type } from "class-transformer";
 import { IsValidLimit } from "../../../decorators/IsValidLimit.js";
 import { IsMessageType } from "../../../decorators/IsMessageType.js";
 import { IsValidBoolean } from "../../../decorators/IsValidBoolean.js";
+import { IsValidTextMessage } from "../../../decorators/IsValidTextMessage.js";
 
 export class GetMessagesDto {
     @IsOptional()
@@ -37,17 +38,14 @@ export class SearchMessagesDto {
     limit?: number;
 }
 
-export class SendMessageDto {
-    @IsMessageType(false)
-    type!: MessageType;
-
-    @IsString()
+export class SendTextMessageDto {
+    @IsValidTextMessage()
     content!: string;
 }
 
 export class UpdateMessageDto {
-    @IsString()
-    content!: string;
+    @IsValidTextMessage()
+    newContent!: string;
 }
 
 export class PinMessageDto {

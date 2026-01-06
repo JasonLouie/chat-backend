@@ -123,7 +123,7 @@ export class MessageService {
     };
 
     /**
-     * Handles updating a message
+     * Handles updating a text message
      */
     public updateMessage = async (
         messageId: UUID,
@@ -141,11 +141,19 @@ export class MessageService {
 
             const message = await this.findMessageOrThrow(manager, messageId);
 
-            if (userId !== message.senderId)
+            if (userId !== message.senderId){
                 throw new EndpointError(
                     403,
                     "Cannot edit messages that do not belong to you."
                 );
+            }
+
+            if (message.type !== MessageType.TEXT) {
+                throw new EndpointError(
+                    403,
+                    "Only text messages can be edited."
+                );
+            }
 
             if (message.content === newContent) return;
 

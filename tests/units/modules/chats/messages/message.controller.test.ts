@@ -6,16 +6,20 @@ import { EndpointError } from "../../../../../src/common/errors/EndpointError.js
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
 import { MessageType } from '../../../../../src/modules/chats/messages/message.types.js';
-import { TEST_CHAT_ID } from "../../../../fixtures/chat.fixture.js";
+import { createMessages, TEST_CHAT_ID, TEST_MESSAGE_IMAGE_URL } from "../../../../fixtures/chat.fixture.js";
 import type { TypedRequest } from "../../../../../src/common/types/express.types.js";
-import type { ChatParamsDto, MessageParamsDto } from "../../../../../src/common/params/params.dto.js";
+import type { MessageParamsDto } from "../../../../../src/common/params/params.dto.js";
 import uploadUtils from "../../../../../src/common/utils/upload.utils.js";
+import { expectNextError, expectStatus204, expectSuccess, genericError, testRequiresFile, testRequiresUser } from "../../../../utils/testHelpers.js";
+import type { Message } from "../../../../../src/modules/chats/messages/message.entity.js";
+import { ImageFolder, type UUID } from "../../../../../src/common/types/common.js";
+import { createMockFile } from "../../../../utils/file.factory.js";
 
 describe("MessageController", () => {
     const messageController = new MessageController(mockMessageService);
 
     let uploadSpy: any;
-    let req: MockRequest<TypedRequest<ChatParamsDto | MessageParamsDto>>;
+    let req: MockRequest<TypedRequest<MessageParamsDto>>;
     let res: MockResponse<Response>;
     let next: jest.Mock;
 
@@ -39,53 +43,319 @@ describe("MessageController", () => {
         jest.restoreAllMocks();
     });
 
-    describe("searchMessages", () => {
-        it("should return 200 and the list of messages on success", async () => {
+    describe("getMessages", () => {
+        let expectedArgs: [any, any, any];
 
+        beforeEach(() => {
+            req.query = {
+                cursor: new Date(),
+                limit: 30
+            }
+
+            expectedArgs = [req.params.chatId, req.user!.id, { beforeDate: req.query.cursor, limit: req.query.limit }];
         });
 
-        
+        testRequiresUser(messageController.getMessages);
+
+        it("should return 200 and the list of messages on success", async () => {
+            const messages = createMessages(
+                MessageType.TEXT,
+                2,
+                {
+                    chatId: req.params.chatId,
+                    senderId: req.user!.id
+                }
+            );
+
+            mockMessageService.searchMessages.mockResolvedValue(messages);
+
+            await messageController.getMessages(req, res, next);
+
+            expectSuccess(mockMessageService.searchMessages, expectedArgs, res);
+
+            const expectedResponse = JSON.parse(JSON.stringify(messages));
+            expect(res._getJSONData()).toEqual(expectedResponse);
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.searchMessages.mockRejectedValue(genericError);
+
+            await messageController.getMessages(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.searchMessages).toHaveBeenCalledWith(...expectedArgs);
+        });
     });
 
-    describe("sendMessage", () => {
-        it("should return 201 and the new message on success", async () => {
-            req.method = "POST";
-            req.body = { content: "Hello World", type: MessageType.TEXT };
+    describe("searchMessages", () => {
+        let expectedArgs: [any, any, any];
 
-            // Mock the service return value
-            const mockResult = { id: "msg-1", content: "Hello World" };
-            mockMessageService.sendMessage.mockResolvedValue(mockResult as any);
+        beforeEach(() => {
+            req.query = {
+                keyword: "t",
+                type: MessageType.TEXT,
+                beforeDate: new Date(),
+                pinned: false
+            }
 
-            // Act
-            await messageController.sendMessage(req, res, next);
-
-            // Assert
-            expect(mockMessageService.sendMessage).toHaveBeenCalledWith(
-                TEST_CHAT_ID,
-                req.user!.id,
-                "Hello World",
-                MessageType.TEXT
-            );
-            expect(res.statusCode).toBe(201);
-            expect(res._getJSONData()).toEqual(mockResult);
+            expectedArgs = [req.params.chatId, req.user!.id, req.query];
         });
 
-        it("should call next(err) if service throws an error", async () => {
-            req = createRequest({
-                user: { id: "user-1" },
-                params: { chatId: "chat-1" },
-                body: { content: "Hi" }
-            });
-            const res = createResponse();
-            const next = jest.fn();
+        testRequiresUser(messageController.searchMessages);
 
-            // Simulate Service Failure
-            const error = new EndpointError(403, "Not allowed");
-            mockMessageService.sendMessage.mockRejectedValue(error);
+        it("should return 200 and the list of messages on success", async () => {
+            const messages = createMessages(
+                MessageType.TEXT,
+                2,
+                {
+                    chatId: req.params.chatId,
+                    senderId: req.user!.id
+                }
+            );
+
+            mockMessageService.searchMessages.mockResolvedValue(messages);
+
+            await messageController.searchMessages(req, res, next);
+
+            expectSuccess(mockMessageService.searchMessages, expectedArgs, res);
+
+            const expectedResponse = JSON.parse(JSON.stringify(messages));
+            expect(res._getJSONData()).toEqual(expectedResponse);
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.searchMessages.mockRejectedValue(genericError);
+
+            await messageController.searchMessages(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.searchMessages).toHaveBeenCalledWith(...expectedArgs);
+        });
+    });
+
+    describe("sendText", () => {
+        let expectedArgs: [UUID, UUID, string, MessageType];
+
+        beforeEach(() => {
+            req.method = "POST";
+            req.body = {
+                content: "Some text message"
+            };
+            expectedArgs = [req.params.chatId, req.user!.id, req.body.content, MessageType.TEXT];
+        });
+
+        testRequiresUser(messageController.sendText);
+
+        it("should return 201 and the new message on success", async () => {
+            const [message] = createMessages(MessageType.TEXT, 1, { chatId: req.params.chatId, senderId: req.user!.id, content: req.body.content }) as [Message];
             
-            await messageController.sendMessage(req, res, next);
+            mockMessageService.sendMessage.mockResolvedValue(message);
 
-            expect(next).toHaveBeenCalledWith(error);
+            await messageController.sendText(req, res, next);
+
+            expectSuccess(mockMessageService.sendMessage, expectedArgs, res, 201);
+            
+            expect(res._getJSONData()).toEqual(JSON.parse(JSON.stringify(message)));
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.sendMessage.mockRejectedValue(genericError);
+            
+            await messageController.sendText(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.sendMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+    });
+
+    describe("sendImage", () => {
+        let expectedArgs: [UUID, UUID, string, MessageType];
+
+        beforeEach(() => {
+            req.method = "POST";
+            expectedArgs = [req.params.chatId, req.user!.id, TEST_MESSAGE_IMAGE_URL, MessageType.IMAGE];
+        });
+
+        testRequiresUser(messageController.sendImage);
+
+        testRequiresFile(messageController.sendImage);
+
+        it("should handle a successful upload", async () => {
+            req.file = createMockFile();
+            const [message] = createMessages(MessageType.IMAGE, 1, { chatId: req.params.chatId, senderId: req.user!.id, content: TEST_MESSAGE_IMAGE_URL }) as [Message];
+
+            uploadSpy.mockResolvedValue(TEST_MESSAGE_IMAGE_URL);
+            mockMessageService.sendMessage.mockResolvedValue(message);
+
+            await messageController.sendImage(req, res, next);
+
+            expect(next).not.toHaveBeenCalled();
+
+            expectSuccess(mockMessageService.sendMessage, expectedArgs, res, 201);
+            
+            expect(uploadSpy).toHaveBeenCalledWith(
+                req.file.buffer,
+                ImageFolder.MESSAGE
+            );
+            
+            expect(res._getJSONData()).toEqual(JSON.parse(JSON.stringify(message)));
+        });
+
+        it("should handle a failed upload", async () => {
+            req.file = createMockFile();
+            
+            uploadSpy.mockRejectedValue(genericError);
+            
+            await messageController.sendImage(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(uploadSpy).toHaveBeenCalledWith(
+                req.file.buffer,
+                ImageFolder.MESSAGE
+            );
+
+            expect(mockMessageService.sendMessage).not.toHaveBeenCalled();
+        });
+
+        it("should pass message service errors to next", async () => {
+            req.file = createMockFile();
+
+            uploadSpy.mockResolvedValue(TEST_MESSAGE_IMAGE_URL);
+            mockMessageService.sendMessage.mockRejectedValue(genericError);
+
+            await messageController.sendImage(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(uploadSpy).toHaveBeenCalledWith(
+                req.file.buffer,
+                ImageFolder.MESSAGE
+            );
+
+            expect(mockMessageService.sendMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+    });
+
+    describe("updateMessage", () => {
+        let expectedArgs: [UUID, UUID, UUID, string];
+
+        beforeEach(() => {      
+            req.method = "PATCH";
+            req.params.messageId = "message-id";
+            req.body = {
+                newContent: "New test message"
+            };
+
+            expectedArgs = [
+                req.params.messageId,
+                req.params.chatId,
+                req.user!.id,
+                req.body.newContent
+            ];
+        });
+
+        testRequiresUser(messageController.updateMessage);
+
+        it("should update a text message", async () => {
+            mockMessageService.updateMessage.mockResolvedValue(undefined);
+
+            await messageController.updateMessage(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockMessageService.updateMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.updateMessage.mockRejectedValue(genericError);
+
+            await messageController.updateMessage(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.updateMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+    });
+
+    describe("pinMessage", () => {
+        let expectedArgs: [UUID, UUID, UUID, boolean];
+
+        beforeEach(() => {
+            req.method = "PATCH";
+            req.params.messageId = "message-id";
+            req.body = {
+                pinned: true
+            };
+
+            expectedArgs = [
+                req.params.messageId,
+                req.params.chatId,
+                req.user!.id,
+                req.body.pinned
+            ];
+        });
+
+        testRequiresUser(messageController.pinMessage);
+
+        it("should pin/unpin the message (depending on req.body)", async () => {
+            mockMessageService.pinMessage.mockResolvedValue(undefined);
+
+            await messageController.pinMessage(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockMessageService.pinMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.pinMessage.mockRejectedValue(genericError);
+
+            await messageController.pinMessage(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.pinMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+    });
+
+    describe("deleteMessage", () => {
+        let expectedArgs: [UUID, UUID, UUID];
+
+        beforeEach(() => {
+            req.method = "DELETE";
+            req.params.messageId = "message-id";
+
+            expectedArgs = [
+                req.params.messageId,
+                req.params.chatId,
+                req.user!.id
+            ];
+        });
+
+        testRequiresUser(messageController.deleteMessage);
+
+        it("should delete a message", async () => {
+            mockMessageService.deleteMessage.mockResolvedValue(undefined);
+
+            await messageController.deleteMessage(req, res, next);
+
+            expectStatus204(res);
+
+            expect(mockMessageService.deleteMessage).toHaveBeenCalledWith(...expectedArgs);
+        });
+
+        it("should pass service errors to next", async () => {
+            mockMessageService.deleteMessage.mockRejectedValue(genericError);
+
+            await messageController.deleteMessage(req, res, next);
+
+            expectNextError(next, res);
+
+            expect(mockMessageService.deleteMessage).toHaveBeenCalledWith(...expectedArgs);
         });
     });
 });
