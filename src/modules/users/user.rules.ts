@@ -22,12 +22,12 @@ export const UserRules = {
             MESSAGE: "Must contain at least one uppercase letter."
         },
         NUMBER: {
-            REGEX: /\d/,
+            REGEX: /[0-9]/,
             MESSAGE: "Must contain at least one number."
         },
-        NO_SPACES: {
-            REGEX: /^\S+$/,
-            MESSAGE: "Password cannot contain whitespace."
+        SPECIAL_CHARACTER: {
+            REGEX: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+            MESSAGE: "Must contain at least one special character."
         }
     }
 }

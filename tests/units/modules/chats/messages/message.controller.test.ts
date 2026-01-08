@@ -2,7 +2,6 @@ import { jest, describe, it, expect, beforeEach, afterEach } from "@jest/globals
 import type { Response } from "express";
 import { createRequest, createResponse, type MockRequest, type MockResponse } from "node-mocks-http";
 import { MessageController } from "../../../../../src/modules/chats/messages/message.controller.js";
-import { EndpointError } from "../../../../../src/common/errors/EndpointError.js";
 import { mockMessageService, resetServiceMocks } from "../../../../mocks/services.mock.js";
 import { createTestUser } from "../../../../fixtures/user.fixture.js";
 import { MessageType } from '../../../../../src/modules/chats/messages/message.types.js';

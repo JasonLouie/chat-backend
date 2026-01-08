@@ -35,9 +35,9 @@ export function IsValidPassword() {
             message: UserRules.PASSWORD.NUMBER.MESSAGE
         })(object, propertyName);
 
-        // No Spaces
-        Matches(UserRules.PASSWORD.NO_SPACES.REGEX, {
-            message: UserRules.PASSWORD.NO_SPACES.MESSAGE
+        // Special characters
+        Matches(UserRules.PASSWORD.SPECIAL_CHARACTER.REGEX, {
+            message: UserRules.PASSWORD.SPECIAL_CHARACTER.MESSAGE
         })(object, propertyName);
     };
 }
