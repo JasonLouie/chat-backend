@@ -1,7 +1,7 @@
 export const UserRules = {
     USERNAME: {
         MIN_LENGTH: 3,
-        MAX_LENGTH: 30,
+        MAX_LENGTH: 20,
         REGEX: /^[a-zA-Z0-9_.]+$/,
         MESSAGE: 'Username can only contain letters, numbers, periods, and underscores.'
     },
